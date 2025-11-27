@@ -65,6 +65,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             
             <div class="settings-section">
                 <h3>2. Citation Key Format</h3>
+                <div style="margin-bottom: 8px;">
+                    <label style="font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <input type="checkbox" id="chk-keep-original"> 
+                        <strong>Keep Original Key</strong> (Do not rename)
+                    </label>
+                </div>
                 <input type="text" id="id-format" value="[Auth][Year][Title][Venue]">
                 <div class="help-text" style="margin-top:5px; color:#64748b; font-size:0.8rem;">
                     Vars: <code>[Auth]</code>, <code>[Year]</code>, <code>[Title]</code>, <code>[Venue]</code>
