@@ -1,0 +1,169 @@
+:root { --primary: #2563eb; --bg: #f8fafc; --surface: #ffffff; --border: #cbd5e1; --text: #334155; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+.layout { max-width: 1400px; margin: 0 auto; display: flex; gap: 20px; flex-wrap: wrap; }
+
+:root { --primary: #2563eb; --bg: #f8fafc; --surface: #ffffff; --border: #cbd5e1; --text: #334155; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+
+/* --- 页面头部样式 (紧凑版) --- */
+.app-header {
+    text-align: center;
+    margin-top: 30px;    /* 减小顶部间距 */
+    margin-bottom: 30px; /* 减小底部间距 */
+}
+
+/* 1. Logo 和标题的容器 */
+.header-branding {
+    display: flex;             /* 开启弹性布局 */
+    align-items: center;       /* 垂直居中对齐 */
+    justify-content: center;   /* 水平居中对齐 */
+    gap: 15px;                 /* Logo 和标题之间的间距 */
+    margin-bottom: 10px;       /* 和下方简介的间距 */
+}
+
+/* 2. Logo 样式 */
+.app-logo {
+    width: 48px;               /*稍微改小一点，更精致 */
+    height: 48px;
+    filter: drop-shadow(0 4px 6px rgba(37, 99, 235, 0.2));
+    transition: transform 0.3s ease;
+}
+
+.app-logo:hover {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* 主标题 */
+.app-header h1 {
+    font-size: 2rem;           /*稍微改小一点点 */
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;                 /* 去掉默认边距，由父容器控制 */
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.2;          /* 修正行高，对齐图片 */
+}
+
+/* 副标题/简介 */
+.app-intro {
+    font-size: 1.1rem;
+    color: #64748b;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto; /* 居中 */
+}
+
+.app-intro strong {
+    color: #334155;
+    font-weight: 600;
+}
+
+/* 移动端适配 */
+@media (max-width: 600px) {
+    .header-branding {
+        flex-direction: column; /* 竖着排 */
+        gap: 5px;
+    }
+    .app-header { margin-top: 60px; }
+}
+
+.layout { max-width: 1400px; margin: 0 auto; display: flex; gap: 20px; flex-wrap: wrap; }
+
+/* 设置面板 */
+.settings-panel { flex: 1; min-width: 300px; background: var(--surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border); height: fit-content; }
+.settings-section { margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+.settings-section:last-child { border-bottom: none; }
+h2 { margin-top: 0; font-size: 1.2rem; color: #1e293b; display: flex; justify-content: space-between; align-items: center; }
+h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 10px; color: #475569; }
+
+/* 控件样式 */
+.checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+.checkbox-label { font-size: 0.85rem; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+input[type="text"], textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; margin-top: 5px; }
+textarea:focus, input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+textarea { resize: vertical; }
+
+/* 工作区 */
+.workspace { flex: 2; min-width: 400px; display: flex; flex-direction: column; gap: 20px; }
+.editor-container { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+.editor-container textarea { min-height: 250px; }
+label.area-label { font-weight: 600; color: #1e293b; }
+
+.actions { display: flex; gap: 10px; align-items: center; }
+button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+button:hover { opacity: 0.9; }
+button.secondary { background: #64748b; }
+
+/* Tabs 样式 */
+.tabs { display: flex; gap: 5px; border-bottom: 1px solid var(--border); margin-bottom: -1px; }
+.tab-btn { background: transparent; color: #64748b; border: 1px solid transparent; border-bottom: none; border-radius: 6px 6px 0 0; padding: 8px 16px; cursor: pointer; font-size: 0.9rem; }
+.tab-btn:hover { color: var(--primary); background: #f1f5f9; }
+.tab-btn.active { background: var(--surface); color: var(--primary); border-color: var(--border); border-bottom-color: var(--surface); font-weight: 600; position: relative; top: 1px; }
+
+/* GitHub Link */
+/* --- 右上角悬浮按钮组 --- */
+.top-links {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px; /* 两个按钮之间的间距 */
+    z-index: 100;
+}
+
+/* 按钮通用样式 */
+.gh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    height: 32px; /* 统一高度 */
+}
+
+.gh-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* 1. Star 按钮 (深色风格) */
+.star-btn {
+    background-color: #24292e;
+    color: white;
+    border: 1px solid #24292e;
+}
+.star-btn svg { fill: white; }
+.star-btn:hover { background-color: #333; }
+
+/* 2. Issue 按钮 (浅色风格) */
+.issue-btn {
+    background-color: white;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+.issue-btn svg { fill: #64748b; }
+.issue-btn:hover { 
+    background-color: #f8fafc; 
+    border-color: #94a3b8;
+    color: #334155;
+}
+
+/* 移动端适配：屏幕窄时只显示图标，隐藏文字 */
+@media (max-width: 600px) {
+    .gh-btn span { display: none; }
+    .gh-btn { padding: 0; width: 32px; justify-content: center; border-radius: 50%; }
+}
+
+/* Toast 样式 */
+
+.toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 10px 20px; border-radius: 4px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }

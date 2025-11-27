@@ -1,250 +1,106 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI BibTeX Cleaner & Renamer</title>
-    <style>
-        :root { --primary-color: #2563eb; --bg-color: #f8fafc; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-color); color: #334155; max-width: 1200px; margin: 0 auto; padding: 20px; }
-        h1 { text-align: center; color: #1e293b; margin-bottom: 10px; }
-        p.subtitle { text-align: center; color: #64748b; margin-bottom: 30px; }
-        
-        .container { display: flex; gap: 20px; height: 70vh; }
-        .box { flex: 1; display: flex; flex-direction: column; }
-        
-        label { font-weight: 600; margin-bottom: 8px; display: block; }
-        textarea { flex: 1; padding: 15px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 14px; resize: none; outline: none; transition: border-color 0.2s; }
-        textarea:focus { border-color: var(--primary-color); }
-        
-        .controls { display: flex; justify-content: center; gap: 15px; margin: 20px 0; }
-        button { background: var(--primary-color); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: pointer; transition: opacity 0.2s; font-weight: 500; }
-        button:hover { opacity: 0.9; }
-        button.secondary { background: #64748b; }
-        
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 4px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
-        .toast.show { opacity: 1; }
-    </style>
+    <title>BibTeX Pro Formatter</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <!-- <link rel="icon" type="image/png" href="Gemini_Generated_Image_rlmnblrlmnblrlmn.png"> -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <h1>AI BibTeX Cleaner</h1>
-    <p class="subtitle">自动精简字段 • 会议名缩写 • 格式化引用 ID (Ren2025TitleCVPR)</p>
-
-    <div class="container">
-        <div class="box">
-            <label for="input">输入原始 BibTeX:</label>
-            <textarea id="input" placeholder="请粘贴 DBLP 或 Google Scholar 的 BibTeX..."></textarea>
-        </div>
-        <div class="box">
-            <label for="output">处理结果:</label>
-            <textarea id="output" readonly placeholder="结果将显示在这里..."></textarea>
-        </div>
+    <div class="top-links">
+        <a href="https://github.com/YOUR_USERNAME/YOUR_REPO/issues" target="_blank" class="gh-btn issue-btn">
+            <svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm9 3a1 1 0 11-2 0 1 1 0 012 0zm-.25-6.25a.75.75 0 00-1.5 0v3.5a.75.75 0 001.5 0v-3.5z"></path></svg>
+            <span>Feedback</span>
+        </a>
+        <a href="https://github.com/YOUR_USERNAME/YOUR_REPO" target="_blank" class="gh-btn star-btn">
+            <svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.719-4.192-3.046-2.97a.75.75 0 01.416-1.28l4.21-.612L7.327.668A.75.75 0 018 .25z"></path></svg>
+            <span>Star</span>
+        </a>
     </div>
 
-    <div class="controls">
-        <button onclick="processBibtex()">⚡ 一键转换</button>
-        <button class="secondary" onclick="copyResult()">📋 复制结果</button>
-    </div>
-
-    <div id="toast" class="toast">已复制到剪贴板</div>
-
-<script>
-/**
- * 核心配置区域
- */
-const KEEP_FIELDS = ['author', 'title', 'booktitle', 'journal', 'year', 'pages', 'volume', 'number', 'doi', 'url', 'eprint', 'archiveprefix', 'primaryclass'];
-
-const IGNORE_TITLE_WORDS = new Set(['the', 'a', 'an', 'on', 'in', 'of', 'for', 'and', 'with', 'via', 'to', 'from']);
-
-// 严格按照 Python 逻辑转写的映射表
-// 注意：正则写法在 JS 中略有不同 (字符串转 RegExp)
-const VENUE_MAPPING = [
-    { regex: /CVPRW|CVPR.*Workshop/i, abbr: 'CVPRW' },
-    { regex: /ICLRW|ICLR.*Workshop/i, abbr: 'ICLRW' },
-    { regex: /CVPR|Computer Vision and Pattern Recognition/i, abbr: 'CVPR' },
-    { regex: /ICCV|International Conference on Computer Vision/i, abbr: 'ICCV' },
-    { regex: /ECCV|European Conference on Computer Vision/i, abbr: 'ECCV' },
-    { regex: /NeurIPS|NIPS|Neural Information Processing Systems/i, abbr: 'NIPS' }, // 配合你的@String NIPS
-    { regex: /ICPR|International Conference on Pattern Recognition/i, abbr: 'ICPR' },
-    { regex: /BMVC|British Machine Vision Conference/i, abbr: 'BMVC' },
-    { regex: /ACM MM|Multimedia/i, abbr: 'ACMMM' },
-    { regex: /ICME|International Conference on Multimedia and Expo/i, abbr: 'ICME' },
-    { regex: /ICML|International Conference on Machine Learning/i, abbr: 'ICML' },
-    { regex: /ICASSP|International Conference on Acoustics, Speech and Signal Processing/i, abbr: 'ICASSP' },
-    { regex: /ICIP|International Conference on Image Processing/i, abbr: 'ICIP' },
-    { regex: /ACCV|Asian Conference on Computer Vision/i, abbr: 'ACCV' },
-    { regex: /ICLR|International Conference on Learning Representations/i, abbr: 'ICLR' },
-    { regex: /IJCAI|International Joint Conference on Artificial Intelligence/i, abbr: 'IJCAI' },
-    { regex: /AAAI|Association for the Advancement of Artificial Intelligence/i, abbr: 'AAAI' },
-    { regex: /SIGIR|Special Interest Group on Information Retrieval/i, abbr: 'SIGIR' },
-    
-    // 期刊
-    { regex: /TPAMI|Pattern Analysis and Machine Intelligence/i, abbr: 'PAMI' },
-    { regex: /IJCV|International Journal of Computer Vision/i, abbr: 'IJCV' },
-    { regex: /TOG|Transactions on Graphics/i, abbr: 'TOG' },
-    { regex: /TIP|Transactions on Image Processing/i, abbr: 'TIP' },
-    { regex: /TVCG|Transactions on Visualization and Computer Graphics/i, abbr: 'TVCG' },
-    { regex: /TMM|Transactions on Multimedia/i, abbr: 'TMM' },
-    { regex: /CSVT|Circuits and Systems for Video Technology/i, abbr: 'CSVT' },
-    { regex: /PR$|Pattern Recognition$/i, abbr: 'PR' },
-    { regex: /SPL|Signal Processing Letters/i, abbr: 'SPL' },
-    { regex: /Vis\.? Res\.?|Vision Research/i, abbr: 'VR' },
-    { regex: /JOV|Journal of Vision/i, abbr: 'JOV' },
-    { regex: /TVC|The Visual Computer/i, abbr: 'TVC' },
-    { regex: /JCST|Journal of Computer Science and Technology/i, abbr: 'JCST' },
-    { regex: /CGF|Computer Graphics Forum/i, abbr: 'CGF' },
-    { regex: /CVM|Computational Visual Media/i, abbr: 'CVM' }
-];
-
-/**
- * 简单的 BibTeX 解析器 (Regex Based)
- * 不依赖外部库，足以处理标准 DBLP/Google Scholar 格式
- */
-function parseBibtex(input) {
-    const entries = [];
-    // 匹配 @type{key, ...} 结构
-    const entryRegex = /@(\w+)\s*\{([^,]*),([\s\S]*?)(?=@\w+|\s*$)/g;
-    
-    let match;
-    while ((match = entryRegex.exec(input)) !== null) {
-        const type = match[1];
-        const rawKey = match[2].trim();
-        const content = match[3];
+    <header class="app-header">
+        <div class="header-branding">
+            <img src="favicon.svg" alt="App Logo" class="app-logo">
+            <h1>BibTeX Pro Formatter</h1>
+        </div>
         
-        const fields = {};
-        
-        // 匹配 key = {value} 或 key = "value" 或 key = 123
-        const fieldRegex = /(\w+)\s*=\s*[\{"]([\s\S]*?)[\}"](?=\s*,|\s*$)|(\w+)\s*=\s*(\d+)/g;
-        let fieldMatch;
-        while ((fieldMatch = fieldRegex.exec(content)) !== null) {
-            const key = (fieldMatch[1] || fieldMatch[3]).toLowerCase();
-            let val = (fieldMatch[2] || fieldMatch[4]);
+        <p class="app-intro">
+            The ultimate tool for researchers to <strong>clean BibTeX</strong>, 
+            <strong>standardize venue names</strong>, and <strong>generate citation keys</strong> automatically.
+            <br>
+            Supports BibTeX, MLA, and GB/T 7714 output formats.
+        </p>
+    </header>
+
+    <div class="layout">
+        <aside class="settings-panel">
+            <div class="settings-section">
+                <h2>⚙️ Settings <button class="secondary" id="btn-reset" style="padding:4px 8px;font-size:12px;">Reset</button></h2>
+            </div>
             
-            // 清理值：移除换行和多余空格
-            val = val.replace(/\s+/g, ' ').trim();
-            fields[key] = val;
-        }
-        
-        entries.push({ type, key: rawKey, fields });
-    }
-    return entries;
-}
+            <div class="settings-section">
+                <h3>1. Keep Fields (BibTeX Only)</h3>
+                <div class="checkbox-grid" id="fields-container"></div>
+            </div>
+            
+            <div class="settings-section">
+                <h3>2. Citation Key Format</h3>
+                <input type="text" id="id-format" value="[Auth][Year][Title][Venue]">
+                <div class="help-text" style="margin-top:5px; color:#64748b; font-size:0.8rem;">
+                    Vars: <code>[Auth]</code>, <code>[Year]</code>, <code>[Title]</code>, <code>[Venue]</code>
+                </div>
+            </div>
+            
+            <div class="settings-section" style="border-bottom:none;">
+                <h3>3. Venue Mappings</h3>
+                
+                <div style="margin-bottom: 10px; font-size: 0.9rem;">
+                    <span style="margin-right: 10px; font-weight: 600;">Output Mode:</span>
+                    <label style="margin-right: 15px; cursor: pointer;">
+                        <input type="radio" name="venue-mode" value="abbr" checked> Abbr (CVPR)
+                    </label>
+                    <label style="cursor: pointer;">
+                        <input type="radio" name="venue-mode" value="full"> Full Name
+                    </label>
+                </div>
 
-/**
- * 提取标题首个实义词
- */
-function getFirstSigWord(title) {
-    if (!title) return "Untitled";
-    // 移除 LaTeX 花括号和非字母字符
-    let clean = title.replace(/[\{\}]/g, "").replace(/[^\w\s]/g, "");
-    let words = clean.split(/\s+/);
-    
-    for (let w of words) {
-        if (!IGNORE_TITLE_WORDS.has(w.toLowerCase())) {
-            return w.charAt(0).toUpperCase() + w.slice(1);
-        }
-    }
-    return words[0] ? (words[0].charAt(0).toUpperCase() + words[0].slice(1)) : "Untitled";
-}
+                <div class="help-text" style="margin-bottom: 5px;">
+                    Format: <code>Regex => Abbr || Full Name</code>
+                </div>
+                <textarea id="mapping-rules" spellcheck="false" style="min-height:150px;"></textarea>
+            </div>
+        </aside>
 
-/**
- * 主处理逻辑
- */
-function processBibtex() {
-    const input = document.getElementById('input').value;
-    const parsedEntries = parseBibtex(input);
-    let resultString = "";
+        <main class="workspace">
+            <div class="editor-container">
+                <label class="area-label">Input BibTeX:</label>
+                <textarea id="input" placeholder="Paste BibTeX here..."></textarea>
+            </div>
 
-    // 按生成的新 ID 排序
-    const processedEntries = parsedEntries.map(entry => {
-        const newEntry = { type: entry.type, fields: {} };
-        
-        // 1. 字段过滤
-        KEEP_FIELDS.forEach(f => {
-            if (entry.fields[f]) newEntry.fields[f] = entry.fields[f];
-        });
+            <div class="actions">
+                <button id="btn-convert">⚡ Convert</button>
+                <button class="secondary" id="btn-copy">📋 Copy Result</button>
+            </div>
 
-        // 2. 会议名映射
-        let venueAbbr = "CONF";
-        let venueFull = newEntry.fields['booktitle'] || newEntry.fields['journal'] || "";
-        
-        let found = false;
-        if (venueFull) {
-            for (let item of VENUE_MAPPING) {
-                if (item.regex.test(venueFull)) {
-                    // 替换字段值
-                    if (newEntry.fields['booktitle']) newEntry.fields['booktitle'] = item.abbr;
-                    if (newEntry.fields['journal']) newEntry.fields['journal'] = item.abbr;
-                    
-                    // 如果原本是 journal 但匹配到了会议缩写，清理冗余
-                    if (newEntry.fields['journal'] && !newEntry.fields['booktitle'] && item.abbr === newEntry.fields['journal']) {
-                        // 保持 journal 字段
-                    }
-                    
-                    venueAbbr = item.abbr;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                // Fallback: 取非特殊字符的第一个词
-                let simple = venueFull.replace(/[^{}\w\s]/g, "");
-                venueAbbr = simple.split(/\s+/)[0] || "CONF";
-            }
-        }
+            <div class="editor-container">
+                <div style="display:flex; justify-content:space-between; align-items:end;">
+                    <label class="area-label">Output:</label>
+                    <div class="tabs" id="format-tabs">
+                        <button class="tab-btn active" data-type="bibtex">BibTeX</button>
+                        <button class="tab-btn" data-type="mla">MLA</button>
+                        <button class="tab-btn" data-type="gbt">GB/T 7714</button>
+                    </div>
+                </div>
+                <textarea id="output" readonly placeholder="Result will appear here..."></textarea>
+            </div>
+        </main>
+    </div>
 
-        // 3. 生成新 ID
-        // 作者
-        let authors = (newEntry.fields['author'] || "Unknown").split(/\s+and\s+/);
-        let firstAuthor = authors[0].trim();
-        let lastName = firstAuthor.includes(',') ? firstAuthor.split(',')[0].trim() : firstAuthor.split(/\s+/).pop();
-        lastName = lastName.replace(/\W+/g, "");
-        
-        // 年份
-        let year = newEntry.fields['year'] || "0000";
-        
-        // 标题词
-        let titleWord = getFirstSigWord(newEntry.fields['title']);
-        
-        newEntry.id = `${lastName}${year}${titleWord}${venueAbbr}`;
-        
-        return newEntry;
-    });
+    <div id="toast" class="toast">Copied to clipboard</div>
 
-    // 排序
-    processedEntries.sort((a, b) => a.id.localeCompare(b.id));
-
-    // 生成最终 BibTeX 字符串
-    processedEntries.forEach(entry => {
-        resultString += `@${entry.type}{${entry.id},\n`;
-        
-        // 按 key 字母顺序输出字段
-        Object.keys(entry.fields).sort().forEach(key => {
-            let val = entry.fields[key];
-            // 如果是缩写（全大写且不含空格），通常不加花括号，但为了兼容性，脚本这里统一加上花括号
-            // 除非是特定的 keys。你之前要求 booktitle = {CVPR}，所以这里统一保留花括号。
-            resultString += `  ${key.padEnd(12)} = {${val}},\n`;
-        });
-        
-        // 移除最后一个逗号
-        resultString = resultString.replace(/,\n$/, "\n");
-        resultString += `}\n\n`;
-    });
-
-    document.getElementById('output').value = resultString;
-}
-
-function copyResult() {
-    const output = document.getElementById('output');
-    output.select();
-    document.execCommand('copy');
-    
-    const toast = document.getElementById('toast');
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2000);
-}
-</script>
-
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
