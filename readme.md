@@ -7,17 +7,17 @@
   </p>
 
   <p>
-    <a href="https://github.com/YOUR_USERNAME/YOUR_REPO/issues">
-      <img src="https://img.shields.io/github/issues/YOUR_USERNAME/YOUR_REPO?color=red&style=flat-square" alt="Issues" />
+    <a href="https://github.com/ylhz/bibtex-cleaner/issues">
+      <img src="https://img.shields.io/github/issues/ylhz/bibtex-cleaner?color=red&style=flat-square" alt="Issues" />
     </a>
-    <a href="https://github.com/YOUR_USERNAME/YOUR_REPO/stargazers">
-      <img src="https://img.shields.io/github/stars/YOUR_USERNAME/YOUR_REPO?color=yellow&style=flat-square" alt="Stars" />
+    <a href="https://github.com/ylhz/bibtex-cleaner/stargazers">
+      <img src="https://img.shields.io/github/stars/ylhz/bibtex-cleaner?color=yellow&style=flat-square" alt="Stars" />
     </a>
     <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License" />
   </p>
 
   <h3>
-    <a href="https://YOUR_USERNAME.github.io/YOUR_REPO/">🚀 Live Demo</a>
+    <a href="https://ylhz.github.io/bibtex-cleaner/">🚀 Live Demo</a>
   </h3>
 </div>
 
