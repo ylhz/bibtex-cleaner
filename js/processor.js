@@ -24,7 +24,7 @@ export function parseMappingRules(text) {
 }
 
 // 2. 主处理管道：增加了 venueMode 参数
-export function processEntries(inputText, mappingRules, idFormat, keepFields, venueMode = 'abbr') {
+export function processEntries(inputText, mappingRules, idFormat, keepFields, venueMode = 'abbr', keepOriginal = false) {
     const rawEntries = parseRawBibtex(inputText); // 这里的 parseRawBibtex 保持原样即可，不用改
     
     return rawEntries.map(entry => {
@@ -67,20 +67,27 @@ export function processEntries(inputText, mappingRules, idFormat, keepFields, ve
         if (newEntry.fields['journal']) newEntry.fields['journal'] = targetVenueName;
 
         // --- 生成 ID (逻辑不变，始终使用 Abbr) ---
-        let authors = (newEntry.fields['author'] || "Unknown").split(/\s+and\s+/);
-        let firstAuth = authors[0].trim();
-        let authLast = firstAuth.includes(',') ? firstAuth.split(',')[0] : firstAuth.split(/\s+/).pop();
-        authLast = authLast.replace(/\W+/g, "");
-        
-        let year = newEntry.fields['year'] || "0000";
-        let titleWord = getTitleWord(newEntry.fields['title']);
-
-        newEntry.id = idFormat
-            .replace("[Auth]", authLast)
-            .replace("[Year]", year)
-            .replace("[Title]", titleWord)
-            .replace("[Venue]", venueAbbrForId); // 注意：ID 永远用缩写，不受 Full Name 模式影响
+        // ⚠️ 修复点：优先检查 keepOriginal，如果开启且存在原始key，直接使用
+        if (keepOriginal && entry.key) {
+            newEntry.id = entry.key;
+        } else {
+            // 否则才执行自动生成逻辑
+            let authors = (newEntry.fields['author'] || "Unknown").split(/\s+and\s+/);
+            let firstAuth = authors[0].trim();
+            let authLast = firstAuth.includes(',') ? firstAuth.split(',')[0] : firstAuth.split(/\s+/).pop();
+            authLast = authLast.replace(/\W+/g, "");
             
+            let year = newEntry.fields['year'] || "0000";
+            let titleWord = getTitleWord(newEntry.fields['title']);
+
+            newEntry.id = idFormat
+                .replace("[Auth]", authLast)
+                .replace("[Year]", year)
+                .replace("[Title]", titleWord)
+                .replace("[Venue]", venueAbbrForId);  // 注意：ID 永远用缩写，不受 Full Name 模式影响
+        }
+
+
         return newEntry;
     }).sort((a, b) => a.id.localeCompare(b.id));
 }
@@ -94,6 +101,8 @@ function parseRawBibtex(input) {
     while ((match = entryRegex.exec(input))) {
         const type = match[1].toLowerCase();
         const rawType = match[1]; 
+        const key = match[2].trim();
+
         const fields = {};
         const fieldRegex = /(\w+)\s*=\s*[\{"]([\s\S]*?)[\}"](?=\s*,|\s*$)|(\w+)\s*=\s*(\d+)/g;
         let fMatch;
@@ -101,7 +110,7 @@ function parseRawBibtex(input) {
             const k = (fMatch[1]||fMatch[3]).toLowerCase();
             fields[k] = (fMatch[2]||fMatch[4]).replace(/\s+/g, ' ').trim();
         }
-        entries.push({ type, rawType, fields });
+        entries.push({ type, rawType, key, fields });
     }
     return entries;
 }

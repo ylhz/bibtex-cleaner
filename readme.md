@@ -23,6 +23,8 @@
 
 ---
 
+<!-- Material Design 3 (M3) -->
+
 ## ✨ Features
 
 - **⚡ Smart Cleaning**: Automatically remove redundant fields (e.g., `timestamp`, `bibsource`, `editor`) and keep only what you need.

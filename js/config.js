@@ -13,7 +13,7 @@ ACCV|Asian Conference on Computer Vision => ACCV || Asian Conference on Computer
 // 2. 人工智能与机器学习 (AI & ML)
 const RULES_AI = `
 # === AI & Machine Learning ===
-NeurIPS|NIPS|Neural Information Processing Systems => NIPS || Advances in Neural Information Processing Systems
+NeurIPS|NIPS|Neural Information Processing Systems => NeurIPS || Advances in Neural Information Processing Systems
 ICML|International Conference on Machine Learning => ICML || International Conference on Machine Learning
 ICLRW|ICLR.*Workshop => ICLRW || ICLR Workshops
 ICLR|International Conference on Learning Representations => ICLR || International Conference on Learning Representations
