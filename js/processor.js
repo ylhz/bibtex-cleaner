@@ -66,49 +66,69 @@ export function processEntries(inputText, mappingRules, idFormat, keepFields, ve
         if (newEntry.fields['booktitle']) newEntry.fields['booktitle'] = targetVenueName;
         if (newEntry.fields['journal']) newEntry.fields['journal'] = targetVenueName;
 
-        // --- 生成 ID (逻辑不变，始终使用 Abbr) ---
+
+        // --- ID 生成逻辑 ---
         // ⚠️ 修复点：优先检查 keepOriginal，如果开启且存在原始key，直接使用
         if (keepOriginal && entry.key) {
             newEntry.id = entry.key;
         } else {
-            // 否则才执行自动生成逻辑
             let authors = (newEntry.fields['author'] || "Unknown").split(/\s+and\s+/);
             let firstAuth = authors[0].trim();
             let authLast = firstAuth.includes(',') ? firstAuth.split(',')[0] : firstAuth.split(/\s+/).pop();
-            authLast = authLast.replace(/\W+/g, "");
+            // 修复：生成 ID 前先清理姓氏中的非字符符号
+            authLast = authLast.replace(/[\{\}\W]+/g, ""); 
             
             let year = newEntry.fields['year'] || "0000";
+            // 修复：防止 year 里混入括号
+            year = year.replace(/[\{\}\W]+/g, "");
+
             let titleWord = getTitleWord(newEntry.fields['title']);
 
             newEntry.id = idFormat
                 .replace("[Auth]", authLast)
                 .replace("[Year]", year)
                 .replace("[Title]", titleWord)
-                .replace("[Venue]", venueAbbrForId);  // 注意：ID 永远用缩写，不受 Full Name 模式影响
+                .replace("[Venue]", venueAbbrForId)
+                .toLowerCase()
+                // 🛡️ 终极防线：移除 ID 中所有残留的非字母数字字符
+                .replace(/[^a-z0-9]/g, ''); 
         }
-
 
         return newEntry;
     }).sort((a, b) => a.id.localeCompare(b.id));
 }
 
-// 辅助函数 (保持在同一个文件或者 import 进来)
+// 辅助函数：解析 BibTeX
 function parseRawBibtex(input) {
-    // ... (保持你之前的 parseRawBibtex 代码不变) ...
     const entries = [];
     const entryRegex = /@(\w+)\s*\{([^,]*),([\s\S]*?)(?=@\w+|\s*$)/g;
     let match;
     while ((match = entryRegex.exec(input))) {
         const type = match[1].toLowerCase();
         const rawType = match[1]; 
-        const key = match[2].trim();
+        const key = match[2].trim(); 
+        
+        // 🚀 核心修复：在解析字段前，先剥离掉 Entry 末尾的关闭大括号
+        let content = match[3];
+        const lastBraceIndex = content.lastIndexOf('}');
+        if (lastBraceIndex !== -1) {
+            content = content.substring(0, lastBraceIndex);
+        }
 
         const fields = {};
-        const fieldRegex = /(\w+)\s*=\s*[\{"]([\s\S]*?)[\}"](?=\s*,|\s*$)|(\w+)\s*=\s*(\d+)/g;
+        // 匹配 key = {val} 或 key = "val" 或 key = 123
+        const fieldRegex = /(\w+)\s*=\s*(?:\{([\s\S]*?)\}|"([\s\S]*?)")(?=\s*,|\s*$)|(\w+)\s*=\s*(\d+)/g;
+        
         let fMatch;
-        while ((fMatch = fieldRegex.exec(match[3]))) {
-            const k = (fMatch[1]||fMatch[3]).toLowerCase();
-            fields[k] = (fMatch[2]||fMatch[4]).replace(/\s+/g, ' ').trim();
+        while ((fMatch = fieldRegex.exec(content))) {
+            const k = (fMatch[1]||fMatch[4]).toLowerCase();
+            // fMatch[2]是花括号内容, fMatch[3]是引号内容, fMatch[5]是数字
+            let v = (fMatch[2]||fMatch[3]||fMatch[5]);
+            if (v) {
+                // 再次清洗值，移除多余空白
+                v = v.replace(/\s+/g, ' ').trim();
+            }
+            fields[k] = v;
         }
         entries.push({ type, rawType, key, fields });
     }

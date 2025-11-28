@@ -2,7 +2,13 @@ const IGNORE_TITLE_WORDS = new Set(['the', 'a', 'an', 'on', 'in', 'of', 'for', '
 
 export function getTitleWord(title) {
     if (!title) return "Untitled";
-    let clean = title.replace(/[\{\}]/g, "").replace(/[^\w\s]/g, "");
+    
+    // 1. 核心修复：更早、更彻底地移除所有花括号
+    let clean = title.replace(/[\{\}]/g, ""); 
+    
+    // 2. 移除标点符号 (保持不变)
+    clean = clean.replace(/[^\w\s]/g, "");
+    
     let words = clean.split(/\s+/);
     for (let w of words) {
         if (!IGNORE_TITLE_WORDS.has(w.toLowerCase())) {
