@@ -4,7 +4,7 @@ import { VENUE_MAPPING_DATA } from './venue_data.js';
 export const CONSTANTS = {
     DEFAULT_FIELDS: ['author', 'title', 'booktitle', 'journal', 'year', 'pages'],
     ALL_FIELDS: ['author', 'title', 'booktitle', 'journal', 'year', 'pages', 'volume', 'number', 'doi', 'url', 'eprint', 'publisher', 'editor', 'month'],
-    DEFAULT_FORMAT: "[Auth][Year][Title][Venue]",
+    DEFAULT_FORMAT: "[Auth][Year][Title]_[Venue]",
     DEFAULT_MAPPINGS: VENUE_MAPPING_DATA
 };
 

@@ -90,8 +90,8 @@ export function processEntries(inputText, mappingRules, idFormat, keepFields, ve
                 .replace("[Title]", titleWord)
                 .replace("[Venue]", venueAbbrForId)
                 .toLowerCase()
-                // 🛡️ 终极防线：移除 ID 中所有残留的非字母数字字符
-                .replace(/[^a-z0-9]/g, ''); 
+                // 🚀 核心修改：允许下划线(_)和连字符(-)通过，不被清洗掉
+                .replace(/[^a-z0-9_\-]/g, '');
         }
 
         return newEntry;
