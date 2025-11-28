@@ -271,6 +271,7 @@ body {
     font-size: 0.9rem;
     cursor: pointer;
     color: var(--md-sys-color-on-surface-variant);
+    margin-bottom: 6px;
 }
 
 /* Custom Checkbox accent */
@@ -325,19 +326,22 @@ textarea.m3-input {
 .code-font { font-family: 'Roboto Mono', monospace; font-size: 0.85rem; }
 
 
+
 .helper-text {
     display: block;
     font-size: 0.75rem;
     color: var(--md-sys-color-outline);
-    margin-top: 6px;      /* 稍微加大一点顶部间距 */
-    padding-left: 14px;   /* ✨ 新增：与输入框内的文字左对齐 (12px padding + border) */
+    
+    /* 核心修改：增加顶部间距，让它不紧贴输入框 */
+    margin-top: 10px; 
+    padding-left: 14px;  /* ✨ 新增：与输入框内的文字左对齐 (12px padding + border) */
 }
 
 /* ================= Workspace (Right) ================= */
 .workspace {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
 }
 
 
@@ -406,7 +410,7 @@ textarea.m3-input {
     background-color: var(--md-sys-color-primary);
     color: var(--md-sys-color-on-primary);
     border: none;
-    padding: 10px 24px;
+    padding: 10px 90px;
     border-radius: var(--radius-full);
     font-size: 0.95rem;
     font-weight: 500;
@@ -429,7 +433,7 @@ textarea.m3-input {
     background-color: transparent;
     color: var(--md-sys-color-primary);
     border: 1px solid var(--md-sys-color-outline);
-    padding: 10px 24px;
+    padding: 10px 90px;
     border-radius: var(--radius-full);
     font-size: 0.95rem;
     font-weight: 500;
@@ -524,11 +528,15 @@ textarea.m3-input {
     background: #F0F2F5; /* 浅灰底槽 */
     padding: 4px;
     border-radius: var(--radius-full);
-    width: fit-content; /* 内容自适应宽度 */
+    /* width: fit-content; 内容自适应宽度 */
+    width: 100%; /* 确保容器横向撑满 */
+    /* padding-right: -14px; */
+    box-sizing: border-box;
 }
 
 /* 2. 胶囊按钮本体 */
 .mode-chip {
+    flex: 1; /* 核心修改：让每个按钮平均占用容器的全部宽度 */
     position: relative;
     cursor: pointer;
     z-index: 1;
@@ -548,6 +556,7 @@ textarea.m3-input {
     font-weight: 500;
     color: var(--md-sys-color-on-surface-variant);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
 }
 
 /* 选中状态：变白、加阴影、文字变蓝 */
@@ -588,6 +597,7 @@ textarea.code-area {
     min-height: 200px;
     width: 100%;               /* 撑满宽度 */
     box-sizing: border-box;
+    /* resize: none; */
 }
 
 textarea.code-area:focus {
