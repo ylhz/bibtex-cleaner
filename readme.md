@@ -1,6 +1,6 @@
 
 <div align="center">
-<img src="favicon.svg" width="120" alt="Logo" />
+<img src="icon.svg" width="120" alt="Logo" />
 <h1>BibTeX Pro Formatter</h1>
 
 <p>
