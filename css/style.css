@@ -1,725 +1,389 @@
 /* ================= M3 Design Tokens ================= */
 :root {
-    /* 核心色彩 */
-    --md-sys-color-primary: #0B57D0;           /* Google Blue */
+    --md-sys-color-primary: #0B57D0;
     --md-sys-color-on-primary: #FFFFFF;
     --md-sys-color-primary-container: #D3E3FD;
-    
-    --md-sys-color-background: #F9FAFB;        /* 柔和的浅灰背景 */
-    --md-sys-color-surface: #FFFFFF;           /* 卡片白色 */
-    --md-sys-color-surface-container: #F0F2F5; /* 输入框背景 */
-    
+    --md-sys-color-background: #F0F2F5;
+    --md-sys-color-surface: #FFFFFF;
+    --md-sys-color-surface-container: #F8F9FA;
     --md-sys-color-outline: #747775;
     --md-sys-color-outline-variant: #C4C7C5;
-    
-    --md-sys-color-on-surface: #1F1F1F;        /* 主要文字黑 */
-    --md-sys-color-on-surface-variant: #444746;/* 次要文字灰 */
-
-    /* 形状与间距 */
+    --md-sys-color-on-surface: #1F1F1F;
+    --md-sys-color-on-surface-variant: #444746;
     --radius-small: 8px;
     --radius-medium: 12px;
     --radius-large: 16px;
     --radius-full: 999px;
-    
-    --shadow-level-1: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    --shadow-level-2: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-level-1: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-level-2: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 body {
     font-family: 'Roboto', -apple-system, sans-serif;
     background-color: var(--md-sys-color-background);
     color: var(--md-sys-color-on-surface);
-    margin: 0;
-    padding: 0;
+    margin: 0; padding: 0;
     line-height: 1.5;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
 }
 
-/* ================= Top Bar (App Bar) ================= */
+.hidden { display: none !important; } /* 强制隐藏，修复 Show More */
+
+/* ================= Top Bar ================= */
 .top-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 24px;
     background: var(--md-sys-color-surface);
-    box-shadow: 0 1px 0 rgba(0,0,0,0.05); /* 极细的分割线 */
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    height: 64px; padding: 0 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 100;
 }
+.branding { display: flex; align-items: center; gap: 12px; }
+.app-logo-small { width: 32px; height: 32px; }
+.app-title { font-size: 1.25rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
+.top-actions { display: flex; align-items: center; gap: 12px; }
+.divider-vertical { width: 1px; height: 24px; background-color: var(--md-sys-color-outline-variant); margin: 0 4px; }
 
-.branding {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.app-logo {
-    width: 32px;
-    height: 32px;
-}
-
-.app-title {
-    font-size: 1.25rem;
-    font-weight: 500;
-    color: var(--md-sys-color-on-surface);
-}
-
-.top-actions {
-    display: flex;
-    gap: 12px;
-}
-/* 通用胶囊按钮样式 */
+/* Buttons */
 .gh-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 16px;     /* 胶囊的内边距 */
-    border-radius: 99px;   /* 纯圆角 */
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    height: 36px;          /* 固定高度 */
-    box-sizing: border-box;
+    display: flex; align-items: center; gap: 8px; padding: 6px 16px;
+    border-radius: 99px; font-size: 0.9rem; font-weight: 600;
+    text-decoration: none; height: 36px; box-sizing: border-box; transition: all 0.2s;
 }
+.issue-btn { background: #FFF; color: #4B5563; border: 1px solid #D1D5DB; }
+.issue-btn:hover { background: #F9FAFB; border-color: #9CA3AF; color: #1F2937; }
+.star-btn { background: #1F2937; color: #FFF; border: 1px solid #1F2937; }
+.star-btn:hover { background: #111827; }
+.gh-btn svg { fill: currentColor; }
 
-.gh-btn svg {
-    fill: currentColor;    /* 图标颜色跟随文字 */
-}
-
-.gh-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-/* 1. Feedback 按钮 (白底灰边) */
-.issue-btn {
-    background-color: #FFFFFF;
-    color: #4B5563;        /* 深灰色文字 */
-    border: 1px solid #D1D5DB; /* 浅灰边框 */
-}
-.issue-btn:hover {
-    background-color: #F9FAFB;
-    border-color: #9CA3AF;
-    color: #1F2937;
-}
-
-/* 2. Star 按钮 (深色背景) */
-.star-btn {
-    background-color: #1F2937; /* GitHub 深色 */
-    color: #FFFFFF;        /* 白色文字 */
-    border: 1px solid #1F2937;
-}
-.star-btn:hover {
-    background-color: #111827; /* 悬停变更深 */
-    border-color: #111827;
-}
-
-/* Icon Button (Outlined style) */
 .icon-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--md-sys-color-on-surface-variant);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    transition: all 0.2s;
+    width: 40px; height: 40px; border-radius: var(--radius-full);
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: transparent; cursor: pointer; color: #444746; transition: all 0.2s;
 }
+.icon-btn:hover { background: rgba(0,0,0,0.08); }
+.icon-btn svg { width: 24px; height: 24px; fill: currentColor; }
 
-.icon-btn:hover {
-    background-color: rgba(0,0,0,0.04);
-    border-color: var(--md-sys-color-outline);
-}
-
-.icon-btn svg {
-    width: 20px;
-    height: 20px;
-    fill: currentColor;
-}
-
-/* ================= Hero Section Branding (Logo + Title) ================= */
+/* ================= Hero ================= */
 .hero-section {
-    text-align: center;
-    padding: 40px 20px 30px;
+    text-align: center; padding: 40px 20px 30px;
+    background-color: var(--md-sys-color-background);
 }
-
-/* 新增：Logo 和标题的横向容器 */
-.hero-branding {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;            /* Logo 和标题的间距 */
-    margin-bottom: 12px;
-}
-
-/* 大 Logo 样式 */
+.hero-branding { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 12px; }
 .hero-logo {
-    width: 56px;          /* 这里可以调整 Logo 大小 */
-    height: 56px;
-    filter: drop-shadow(0 4px 6px rgba(11, 87, 208, 0.15)); /* 柔和的投影 */
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Q弹动画 */
+    width: 56px; height: 56px;
+    filter: drop-shadow(0 4px 6px rgba(11, 87, 208, 0.15));
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .hero-logo:hover { transform: scale(1.1) rotate(10deg); }
-
-
 .hero-section h1 {
-    font-size: 2.5rem;
-    font-weight: 800;
-    margin: 0;
+    font-size: 2.5rem; font-weight: 800; margin: 0;
     background: linear-gradient(135deg, #0B57D0 0%, #1e40af 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    line-height: 1.1;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1;
 }
+.app-intro { font-size: 1rem; color: #666; margin: 0; }
+
+/* ================= Main Layout (宽屏优化) ================= */
 
 
-
-.hero-section p {
-    font-size: 1rem;
-    color: var(--md-sys-color-on-surface-variant);
+/* 1. 主容器：固定高度，填满屏幕剩余空间 */
+.main-container {
+    max-width: 100%; /* 全宽 */
     margin: 0;
-}
-
-/* 移动端适配 */
-@media (max-width: 600px) {
-    .gh-btn span { display: none; } /* 手机上只显示图标 */
-    .gh-btn { padding: 0; width: 36px; justify-content: center; }
-    
-    .hero-branding { flex-direction: column; gap: 8px; } /* 手机上 Logo 换行 */
-    .hero-logo { width: 48px; height: 48px; }
-}
-
-/* ================= Main Layout ================= */
-.layout {
-    max-width: 1200px;
-    margin: 20px auto;
-    padding: 0 20px;
+    padding: 24px;
     display: grid;
-    grid-template-columns: 320px 1fr; /* 左侧固定宽，右侧自适应 */
+    /* 左侧 400px，右侧自适应 */
+    grid-template-columns: 400px 1fr; 
     gap: 24px;
-    /* align-items: start;  <-- 删除这行 (默认是 stretch，或者显式写 stretch) */
-    align-items: stretch; /* <-- 改为这行：让左右卡片高度强制拉伸对齐 */
+    /* 关键：计算高度 = 屏幕高度 - 顶部导航栏(64px) - 底部留白 */
+    height: calc(100vh - 64px); 
+    box-sizing: border-box;
+    overflow: hidden; /* 防止外层滚动 */
+    overflow-y: auto
 }
 
-/* ================= Settings Card (Left) ================= */
-.settings-card {
+
+.card {
     background: var(--md-sys-color-surface);
     border-radius: var(--radius-large);
-    padding: 24px;
     box-shadow: var(--shadow-level-1);
-    border: 1px solid rgba(0,0,0,0.02); /* 微弱的边框增强质感 */
+    border: 1px solid rgba(0,0,0,0.02);
+    overflow: hidden;
 }
 
-.card-header {
+
+/* 2. 左侧搜索卡片：撑满高度 */
+.search-card {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.card-header h2 {
-    font-size: 1.1rem;
-    margin: 0;
-    font-weight: 500;
-}
-
-/* Text Button (Reset) */
-.text-btn {
-    background: none;
-    border: none;
-    color: var(--md-sys-color-primary);
-    font-weight: 500;
-    font-size: 0.9rem;
-    cursor: pointer;
-    padding: 6px 12px;
-    border-radius: var(--radius-full);
-}
-.text-btn:hover { background-color: var(--md-sys-color-primary-container); }
-
-/* Settings Groups */
-.group-title {
-    font-size: 0.875rem;
-    color: var(--md-sys-color-primary);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 0 0 12px 0;
-}
-
-.divider {
-    height: 1px;
-    background-color: var(--md-sys-color-outline-variant);
-    opacity: 0.4;
-    margin: 24px 0;
-}
-
-/* Checkbox Grid */
-.checkbox-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-/* ✅ 新增：修复展开后的间距问题 */
-#fields-secondary {
-    margin-top: 12px; /* 必须和上面的 gap: 12px 保持一致 */
-}
-
-.checkbox-label, .checkbox-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: 6px;
-}
-
-/* Custom Checkbox accent */
-input[type="checkbox"] {
-    accent-color: var(--md-sys-color-primary);
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-}
-
-/* Radio Chips */
-.radio-group {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-.radio-chip {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
-    cursor: pointer;
-}
-input[type="radio"] { accent-color: var(--md-sys-color-primary); }
-
-/* M3 Inputs */
-.m3-input {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid var(--md-sys-color-outline-variant);
-    border-radius: var(--radius-small);
-    font-size: 0.9rem;
-    background: var(--md-sys-color-surface-container); /* 浅灰底 */
-    transition: all 0.2s;
-    box-sizing: border-box;
-}
-
-.m3-input:focus {
-    border-color: var(--md-sys-color-primary);
-    outline: 2px solid var(--md-sys-color-primary-container);
+    flex-direction: column;
+    height: 100%; /* 撑满 grid 这一格的高度 */
     background: var(--md-sys-color-surface);
+    border-radius: var(--radius-large);
+    box-shadow: var(--shadow-level-1);
+    overflow: hidden; /* 内部滚动 */
 }
 
-.m3-input:disabled { opacity: 0.6; cursor: not-allowed; }
-
-textarea.m3-input {
-    min-height: 180px;
-    resize: vertical;
-    line-height: 1.4;
+/* 左侧列表：占据剩余空间并滚动 */
+.results-list {
+    flex: 1;
+    overflow-y: auto; /* 关键：只有列表区域滚动 */
+    padding: 0;
 }
 
-.code-font { font-family: 'Roboto Mono', monospace; font-size: 0.85rem; }
 
 
-
-.helper-text {
-    display: block;
-    font-size: 0.75rem;
-    color: var(--md-sys-color-outline);
-    
-    /* 核心修改：增加顶部间距，让它不紧贴输入框 */
-    margin-top: 10px; 
-    padding-left: 14px;  /* ✨ 新增：与输入框内的文字左对齐 (12px padding + border) */
+/* 修改 .search-card 的高度，让它自动撑满 */
+.search-card {
+    display: flex;
+    flex-direction: column;
+    /* 🚀 修改：不再固定高度，而是由 Grid 布局拉伸，撑满左侧高度 */
+    /* height: 100%;  */
+    min-height: 650px; /* 保底高度 */
 }
 
-/* ================= Workspace (Right) ================= */
-.workspace {
+/* 2. 移除 "Search DBLP" 标题，直接用 padding */
+.search-header-area { padding: 20px; border-bottom: 1px solid #F0F0F0; }
+
+.search-bar-wrapper {
+    display: flex; align-items: center; height: 48px;
+    background: var(--md-sys-color-surface-container);
+    border-radius: 24px; padding: 0 16px; transition: all 0.2s;
+}
+.search-bar-wrapper:focus-within { background: #FFF; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.search-icon-leading { display: flex; margin-right: 12px; color: #666; }
+.search-icon-leading svg { width: 20px; height: 20px; fill: currentColor; }
+.search-input-m3 { flex: 1; border: none; background: transparent; outline: none; font-size: 0.95rem; }
+.search-btn-trailing { background: none; border: none; cursor: pointer; color: var(--md-sys-color-primary); padding: 4px; display: flex; }
+.search-btn-trailing svg { width: 24px; height: 24px; fill: currentColor; }
+
+.results-list { flex: 1; overflow-y: auto; padding: 0; }
+.empty-state { padding: 40px 20px; text-align: center; color: #888; font-size: 0.9rem; }
+.result-item {
+    padding: 16px 20px; border-bottom: 1px solid #F0F0F0; cursor: pointer; transition: background 0.1s;
+}
+.result-item:hover { background: #F8FAFC; }
+.result-item.active { background: #E8F0FE; border-left: 4px solid var(--md-sys-color-primary); }
+.result-title { font-weight: 500; font-size: 0.9rem; color: #1F1F1F; margin-bottom: 6px; line-height: 1.4; }
+.result-meta { font-size: 0.8rem; color: #666; }
+
+
+/* 3. 右侧工作区：撑满高度 */
+.editor-workspace {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    height: 100%;
+    overflow: hidden; /* 防止整体滚动 */
 }
 
 
-.editor-section {
-    background: var(--md-sys-color-surface);
-    border-radius: var(--radius-large);
-    
-    /* 🎨 修改：从 20px 改为 24px，与左侧 Settings 卡片对齐 */
-    padding: 24px; 
-    
-    box-shadow: var(--shadow-level-1);
+
+/* 4. 右侧卡片 (Input/Output)：弹性高度 */
+.editor-card {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    flex: 1; /* 上下平分高度 */
+    min-height: 0; /* 关键：允许 flex 子项缩小 */
+    background: var(--md-sys-color-surface);
+    border-radius: var(--radius-large);
+    box-shadow: var(--shadow-level-1);
+    overflow: hidden;
 }
+.card-header-simple { padding: 16px 24px; border-bottom: 1px solid #F0F0F0; }
+.card-header-simple h3 { margin: 0; font-size: 1.1rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
 
 
-.section-label {
-    display: block;
-    
-    /* 🎨 修改：字号改大，与 Settings 标题一致 */
-    font-size: 1.1rem; 
-    
-    /* 🎨 修改：颜色改深，变成标题黑，而不是说明灰 */
-    color: var(--md-sys-color-on-surface); 
-    
-    font-weight: 500;
-    
-    /* 🎨 修改：增加底部间距，让下方内容不那么挤 */
-    margin-bottom: 16px; 
-}
 
+/* 文本框：字体调小，允许滚动 */
 .m3-textarea {
     width: 100%;
-    min-height: 250px;
+    height: 100%;
     padding: 16px;
-    border: 1px solid var(--md-sys-color-outline-variant);
-    border-radius: var(--radius-medium);
-    font-family: 'Roboto Mono', monospace;
-    font-size: 0.9rem;
-    background-color: #FAFCFF; /* 很淡的蓝色底，区分普通文本 */
-    color: var(--md-sys-color-on-surface);
-    resize: vertical;
-    transition: border 0.2s;
-    box-sizing: border-box;
-}
-
-.m3-textarea:focus {
-    border-color: var(--md-sys-color-primary);
+    border: none;
+    resize: none;
     outline: none;
-    box-shadow: 0 0 0 3px var(--md-sys-color-primary-container);
+    font-family: 'Roboto Mono', monospace; 
+    font-size: 0.85rem; /* 字体调小 */
+    line-height: 1.5;
+    color: var(--md-sys-color-on-surface);
+    background: transparent;
+    box-sizing: border-box;
+    overflow-y: auto; /* 文本框内部滚动 */
 }
 
-/* Actions Bar */
-.actions-bar {
-    display: flex;
-    gap: 16px;
-    justify-content: flex-end; /* 按钮居右，符合阅读逻辑 */
-}
-
-/* Filled Button (Primary) */
+.actions-bar { display: flex; justify-content: center; gap: 16px; margin: 4px 0; }
 .btn-filled {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background-color: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-    border: none;
-    padding: 10px 90px;
-    border-radius: var(--radius-full);
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    box-shadow: var(--shadow-level-1);
-    transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--md-sys-color-primary); color: #FFF;
+    border: none; padding: 10px 40px; border-radius: 99px;
+    font-weight: 500; cursor: pointer; box-shadow: var(--shadow-level-1); transition: all 0.2s;
 }
-
-.btn-filled:hover {
-    box-shadow: var(--shadow-level-2);
-    filter: brightness(1.1);
-    transform: translateY(-1px);
-}
-
-/* Outlined Button (Secondary) */
+.btn-filled:hover { box-shadow: var(--shadow-level-2); filter: brightness(1.1); transform: translateY(-1px); }
 .btn-outlined {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background-color: transparent;
-    color: var(--md-sys-color-primary);
+    display: flex; align-items: center; gap: 8px;
+    background: transparent; color: var(--md-sys-color-primary);
     border: 1px solid var(--md-sys-color-outline);
-    padding: 10px 90px;
-    border-radius: var(--radius-full);
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
+    padding: 10px 40px; border-radius: 99px;
+    font-weight: 500; cursor: pointer; transition: all 0.2s;
 }
+.btn-outlined:hover { background: var(--md-sys-color-primary-container); }
 
-.btn-outlined:hover {
-    background-color: var(--md-sys-color-primary-container);
-    border-color: var(--md-sys-color-primary);
-}
-
-/* ================= Tabs ================= */
 .output-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 24px; border-bottom: 1px solid #F0F0F0;
 }
-
-.m3-tabs {
-    display: flex;
-    gap: 20px;
-    position: relative;
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
-    padding-bottom: 0;
-}
-
+.output-header h3 { margin: 0; font-size: 1.1rem; font-weight: 500; }
+.m3-tabs { display: flex; gap: 16px; }
 .tab-btn {
-    background: none;
-    border: none;
-    padding: 8px 4px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--md-sys-color-on-surface-variant);
-    cursor: pointer;
-    position: relative;
-    transition: color 0.2s;
+    background: none; border: none; padding: 6px 0;
+    font-size: 0.9rem; font-weight: 500; color: #666;
+    cursor: pointer; transition: color 0.2s; position: relative;
 }
-
 .tab-btn:hover { color: var(--md-sys-color-primary); }
+.tab-btn.active { color: var(--md-sys-color-primary); border-bottom: 2px solid var(--md-sys-color-primary); }
 
-.tab-btn.active {
-    color: var(--md-sys-color-primary);
+/* ================= Settings Drawer ================= */
+.drawer-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4); z-index: 199; opacity: 0; visibility: hidden; transition: opacity 0.3s;
+}
+.drawer-overlay.open { opacity: 1; visibility: visible; }
+
+.settings-drawer {
+    position: fixed; top: 0; right: -420px; width: 420px; height: 100vh;
+    background: #FFF; z-index: 200; box-shadow: -4px 0 16px rgba(0,0,0,0.1);
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column;
+}
+.settings-drawer.open { right: 0; }
+
+.drawer-header {
+    padding: 20px 24px; border-bottom: 1px solid #F0F0F0;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.drawer-header h2 { font-size: 1.25rem; margin: 0; }
+.drawer-content { padding: 24px; overflow-y: auto; flex: 1; }
+
+/* 5. Reset 按钮显眼化 */
+.btn-reset-outlined {
+    border: 1px solid #D32F2F; color: #D32F2F; background: transparent;
+    padding: 6px 16px; border-radius: 99px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
+    margin-right: auto; /* 靠左显示，不和关闭按钮挤 */
+}
+.btn-reset-outlined:hover { background: #FFEBEE; }
+
+.settings-group { margin-bottom: 32px; }
+.group-title {
+    font-size: 0.875rem; color: var(--md-sys-color-primary);
+    font-weight: 700; text-transform: uppercase; margin: 0 0 16px 0; letter-spacing: 0.5px;
+}
+.divider { height: 1px; background-color: #E0E0E0; margin: 24px 0; }
+
+/* Checkbox Grid */
+.checkbox-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#fields-secondary { margin-top: 12px; }
+.checkbox-row {
+    display: flex; align-items: center; gap: 10px; font-size: 0.9rem;
+    cursor: pointer; color: #333;
+}
+input[type="checkbox"] { accent-color: var(--md-sys-color-primary); width: 18px; height: 18px; cursor: pointer; }
+
+/* Show more btn */
+.small-btn { margin-top: 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 4px; color: var(--md-sys-color-primary); background: none; border: none; cursor: pointer; font-weight: 500; }
+.arrow-icon { width: 18px; height: 18px; fill: currentColor; transition: transform 0.3s; }
+.arrow-icon.rotate { transform: rotate(180deg); }
+
+/* Input Styles */
+.input-wrapper { position: relative; margin-top: 12px; }
+.m3-input {
+    width: 100%; padding: 12px; border: 1px solid #C4C7C5; border-radius: 8px;
+    font-size: 0.9rem; background: #F8F9FA; box-sizing: border-box; transition: all 0.2s;
+}
+.m3-input:focus { border-color: var(--md-sys-color-primary); background: #FFF; outline: none; }
+.m3-input:disabled { opacity: 0.6; cursor: not-allowed; background: #EEE; }
+.helper-text { font-size: 0.75rem; color: #666; margin-top: 8px; padding-left: 4px; }
+
+/* 4. Venue Mappings: 纯按钮风格 (去除圆点) */
+.venue-mode-selector {
+    display: flex; gap: 0; margin-bottom: 16px; background: #F0F2F5; 
+    padding: 4px; border-radius: 8px; width: 100%; box-sizing: border-box;
+}
+.mode-chip { flex: 1; position: relative; cursor: pointer; }
+.mode-chip input[type="radio"] { display: none; }
+.chip-label {
+    display: block; padding: 8px 0; border-radius: 6px; font-size: 0.85rem; font-weight: 500;
+    color: #555; transition: all 0.2s; text-align: center;
+}
+.mode-chip input:checked + .chip-label {
+    background-color: white; color: var(--md-sys-color-primary);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-weight: 600;
 }
 
-/* Active Indicator (Border Bottom) */
-.tab-btn.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px; /* 盖住底线 */
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background-color: var(--md-sys-color-primary);
-    border-top-left-radius: 3px;
-    border-top-right-radius: 3px;
+/* Code Editor */
+.code-editor-wrapper { position: relative; }
+textarea.code-area {
+    font-family: 'Roboto Mono', monospace; font-size: 0.85rem; line-height: 1.6;
+    white-space: pre; overflow-x: auto; background-color: #F8F9FA; color: #333;
+    border: 1px solid #C4C7C5; border-radius: 8px; padding: 12px; min-height: 200px;
+    width: 100%; box-sizing: border-box;
 }
+textarea.code-area:focus { border-color: var(--md-sys-color-primary); background: #FFF; outline: 2px solid var(--md-sys-color-primary-container); }
 
-/* ================= Toast ================= */
+.icon-btn-ghost {
+    position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.05); border: none;
+    width: 28px; height: 28px; border-radius: 4px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; z-index: 10;
+}
+.code-editor-wrapper.fullscreen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 300;
+    display: flex; align-items: center; justify-content: center; padding: 40px; box-sizing: border-box;
+}
+.code-editor-wrapper.fullscreen textarea.code-area { width: 90%; height: 90%; background: #FFF; }
+
+/* Toast */
 .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: #323232;
-    color: white;
-    padding: 12px 24px;
-    border-radius: var(--radius-full);
-    font-size: 0.9rem;
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.3s;
-    box-shadow: var(--shadow-level-2);
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #323232; color: #FFF; padding: 12px 24px; border-radius: 99px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 400;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* Modal Styles */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: all 0.2s;
+}
+.modal-overlay.show { opacity: 1; visibility: visible; }
+
+.modal-card {
+    background: #FFF; width: 90%; max-width: 500px;
+    border-radius: var(--radius-large);
+    box-shadow: var(--shadow-level-2);
+    overflow: hidden; max-height: 80vh; display: flex; flex-direction: column;
+}
+
+.modal-header {
+    padding: 16px 24px; border-bottom: 1px solid #F0F0F0;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.modal-header h3 { margin: 0; font-size: 1.1rem; color: #D32F2F; }
+
+.modal-content {
+    padding: 24px; overflow-y: auto;
+}
+
+.warning-item {
+    padding: 12px; background: #FFEBEE; color: #B71C1C;
+    border-radius: 8px; margin-bottom: 8px; font-size: 0.9rem;
+    border-left: 4px solid #D32F2F;
+}
+.warning-item:last-child { margin-bottom: 0; }
+
 /* Mobile */
-@media (max-width: 800px) {
-    .layout { grid-template-columns: 1fr; }
-    .hero-section h1 { font-size: 1.8rem; }
-}
-
-
-/* ================= Venue Mappings (Chips & Code Editor) ================= */
-
-/* 1. 胶囊切换器容器 */
-.venue-mode-selector {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-    background: #F0F2F5; /* 浅灰底槽 */
-    padding: 4px;
-    border-radius: var(--radius-full);
-    /* width: fit-content; 内容自适应宽度 */
-    width: 100%; /* 确保容器横向撑满 */
-    /* padding-right: -14px; */
-    box-sizing: border-box;
-}
-
-/* 2. 胶囊按钮本体 */
-.mode-chip {
-    flex: 1; /* 核心修改：让每个按钮平均占用容器的全部宽度 */
-    position: relative;
-    cursor: pointer;
-    z-index: 1;
-}
-
-/* 隐藏原始的小圆圈 Radio */
-.mode-chip input[type="radio"] {
-    display: none;
-}
-
-/* 按钮文字标签 */
-.chip-label {
-    display: block;
-    padding: 8px 16px;
-    border-radius: var(--radius-full);
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--md-sys-color-on-surface-variant);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    text-align: center;
-}
-
-/* 选中状态：变白、加阴影、文字变蓝 */
-.mode-chip input:checked + .chip-label {
-    background-color: white;
-    color: var(--md-sys-color-primary);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    font-weight: 600;
-}
-
-/* 悬停微交互 */
-.mode-chip:hover .chip-label {
-    color: var(--md-sys-color-primary);
-}
-
-/* 3. 代码编辑器风格 */
-.code-editor-wrapper {
-    position: relative;
-}
-
-textarea.code-area {
-    font-family: 'Roboto Mono', 'Menlo', 'Consolas', monospace; /* 等宽字体 */
-    font-size: 13px;
-    line-height: 1.6;          /* 增加行高 */
-    white-space: pre;          /* 不自动换行 */
-    overflow-x: auto;          /* 横向滚动 */
-
-    /* 🎨 核心修改：改回浅色系，融入整体 M3 风格 */
-    background-color: var(--md-sys-color-surface-container); /* 浅灰底 #F0F2F5 */
-    color: var(--md-sys-color-on-surface);                   /* 深灰字 */
-    border: 1px solid var(--md-sys-color-outline-variant);
-
-    /* background-color: #282C34; /* 深色背景 */
-    /* color: #ABB2BF;            /* 浅色文字 */
-    /* border: 1px solid #3E4451; */
-    border-radius: 8px;
-    padding: 12px;
-    min-height: 200px;
-    width: 100%;               /* 撑满宽度 */
-    box-sizing: border-box;
-    /* resize: none; */
-}
-
-textarea.code-area:focus {
-    border-color: var(--md-sys-color-primary);
-    box-shadow: 0 0 0 2px rgba(11, 87, 208, 0.2);
-    outline: none;
-}
-
-/* 滚动条美化 */
-textarea.code-area::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-textarea.code-area::-webkit-scrollbar-track {
-    background: #F0F2F5;
-    border-radius: 0 0 8px 0;
-}
-textarea.code-area::-webkit-scrollbar-thumb {
-    background: #C4C7C5; /* 浅灰滑块 */
-    /* background: #4B5263; */
-    border-radius: 4px;
-}
-
-
-/* --- Keep Fields 折叠样式 --- */
-.hidden {
-    display: none;
-}
-
-.small-btn {
-    margin-top: 8px;
-    font-size: 0.8rem;
-    padding: 4px 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--md-sys-color-primary);
-}
-
-.arrow-icon {
-    width: 18px;
-    height: 18px;
-    fill: currentColor;
-    transition: transform 0.3s;
-}
-
-/* 箭头旋转动画 */
-.arrow-icon.rotate {
-    transform: rotate(180deg);
-}
-
-/* --- 2. 代码编辑器全屏样式 --- */
-.icon-btn-ghost {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(255,255,255,0.1);
-    border: none;
-    color: #ABB2BF;
-    width: 32px;
-    height: 32px;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    z-index: 10;
-}
-
-.icon-btn-ghost:hover {
-    background: rgba(255,255,255,0.2);
-    color: white;
-}
-
-.icon-btn-ghost svg {
-    width: 20px;
-    height: 20px;
-    fill: currentColor;
-}
-
-/* 全屏状态 (Fullscreen Mode) */
-.code-editor-wrapper.fullscreen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9999;
-    background: rgba(0,0,0,0.6); /* 背景遮罩 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-    box-sizing: border-box;
-    backdrop-filter: blur(5px);
-}
-
-.code-editor-wrapper.fullscreen textarea.code-area {
-    width: 90%;
-    height: 90%;
-    max-width: 1000px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border-color: var(--md-sys-color-primary);
-}
-
-.code-editor-wrapper.fullscreen .helper-text {
-    display: none; /* 全屏时不显示底部提示 */
-}
-
-.code-editor-wrapper.fullscreen .icon-btn-ghost {
-    top: 6vh; /* 调整关闭按钮位置 */
-    right: 6vw;
-    background: var(--md-sys-color-primary);
-    color: white;
-}
-
-/* --- 3. 按钮居中 --- */
-/* 找到原来的 .actions-bar 修改 justify-content */
-.actions-bar {
-    display: flex;
-    gap: 16px;
-    justify-content: center; /* 改为居中 */
-    margin-top: 10px;
+@media (max-width: 900px) {
+    .main-container { grid-template-columns: 1fr; padding: 0 16px; }
+    .search-card { height: auto; max-height: 400px; }
+    .settings-drawer { width: 100%; right: -100%; }
+    .gh-btn span { display: none; }
 }

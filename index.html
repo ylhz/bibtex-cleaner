@@ -21,10 +21,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BibTeX Pro Formatter</title>
+    
     <base href="/bibtex-cleaner/">
     
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <script>
+        if (window.location.hostname.endsWith('github.io') || window.location.hostname.endsWith('vercel.app')) {
+            const repoName = window.location.pathname.split('/')[1];
+            if (repoName) {
+                const baseTag = document.createElement('base');
+                baseTag.href = '/' + repoName + '/';
+                document.head.prepend(baseTag);
+            }
+        }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -32,26 +44,11 @@
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NVPKZFFN"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
-<!-- 
-    <div class="top-bar">
+
+
+    <nav class="top-bar">
         <div class="branding">
-            <img src="favicon.svg" alt="App Logo" class="app-logo">
-            <span class="app-title">BibTeX Pro</span>
-        </div>
-
-        <div class="top-actions">
-            <a href="https://github.com/ylhz/bibtex-cleaner/issues" target="_blank" class="icon-btn" title="Feedback">
-                <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
-            </a>
-            <a href="https://github.com/ylhz/bibtex-cleaner" target="_blank" class="icon-btn" title="Star on GitHub">
-                <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-            </a>
-        </div>
-    </div> -->
-
-    <div class="top-bar">
-
-        <div class="branding" style="visibility: visible;"> <img src="favicon.svg" alt="App Logo" class="app-logo">
+            <img src="icon.svg" alt="App Logo" class="app-logo-small">
             <span class="app-title">BibTeX Pro</span>
         </div>
 
@@ -60,52 +57,129 @@
                 <svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm9 3a1 1 0 11-2 0 1 1 0 012 0zm-.25-6.25a.75.75 0 00-1.5 0v3.5a.75.75 0 001.5 0v-3.5z"></path></svg>
                 <span>Feedback</span>
             </a>
+            
             <a href="https://github.com/ylhz/bibtex-cleaner" target="_blank" class="gh-btn star-btn">
                 <svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.719-4.192-3.046-2.97a.75.75 0 01.416-1.28l4.21-.612L7.327.668A.75.75 0 018 .25z"></path></svg>
                 <span>Star</span>
             </a>
-        </div>
-    </div>
 
-    <div class="hero-section">
+            <div class="divider-vertical"></div>
+
+            <button id="btn-open-settings" class="icon-btn" title="Settings">
+                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <header class="hero-section">
         <div class="hero-branding">
-            <img src="favicon.svg" alt="App Logo" class="hero-logo">
+            <img src="icon.svg" alt="App Logo" class="hero-logo">
             <h1>BibTeX Pro Formatter</h1>
         </div>
-        <p>The ultimate tool to clean BibTeX, standardize venue names, and generate citation keys.</p>
-    </div>
+        <p class="app-intro">
+            The ultimate tool to clean BibTeX, standardize venue names, and generate citation keys.
+        </p>
+    </header>
 
-    <div class="layout">
-        <aside class="settings-card">
-            <div class="card-header">
-                <h2>Settings</h2>
-                <button class="text-btn" id="btn-reset">Reset</button>
+    <div class="main-container">
+        
+        <aside class="card search-card">
+            <div class="search-header-area">
+                <div class="search-bar-wrapper">
+                    <div class="search-icon-leading">
+                        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    </div>
+                    <input type="text" id="search-input" class="search-input-m3" placeholder="Search title in DBLP..." />
+                    <button id="btn-search" class="search-btn-trailing" title="Search">
+                        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    </button>
+                </div>
             </div>
-            
-            <div class="settings-group">
-                <h3 class="group-title">Keep Fields</h3>
-                <div class="checkbox-list" id="fields-primary"></div>
-                
-                <div class="checkbox-list hidden" id="fields-secondary"></div>
-                
-                <button id="btn-toggle-fields" class="text-btn small-btn">
-                    <span>Show more</span>
-                    <svg viewBox="0 0 24 24" class="arrow-icon"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+
+            <div id="search-results-list" class="results-list">
+                <div class="empty-state">
+                    <p>Enter a title to search papers.</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="editor-workspace">
+            <div class="card editor-card">
+                <div class="card-header-simple">
+                    <h3>Input BibTeX</h3>
+                </div>
+                <textarea id="input" class="m3-textarea" placeholder="Paste your messy BibTeX here..."></textarea>
+            </div>
+
+            <div class="actions-bar">
+                <button id="btn-convert" class="btn-filled">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z" fill="white"/></svg>
+                    Convert
+                </button>
+                <button id="btn-copy" class="btn-outlined">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="currentColor"/></svg>
+                    Copy Result
                 </button>
             </div>
-            
+
+            <div class="card editor-card">
+                <div class="output-header">
+                    <div style="display:flex; align-items:center; gap: 12px; overflow: hidden;">
+                        <h3>Output</h3>
+                        <span id="venue-warning-msg" style="color: #D32F2F; font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: none;">
+                            </span>
+                    </div>
+
+                    <div class="m3-tabs" id="format-tabs">
+                        <button class="tab-btn active" data-type="bibtex">BibTeX</button>
+                        <button class="tab-btn" data-type="mla">MLA</button>
+                        <button class="tab-btn" data-type="gbt">GB/T 7714</button>
+                        <div class="tab-indicator"></div>
+                    </div>
+                </div>
+                
+                <textarea id="output" class="m3-textarea" readonly placeholder="Result will appear here..."></textarea>
+            </div>
+        </main>
+    </div>
+
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <aside class="settings-drawer" id="settings-drawer">
+        <div class="drawer-header">
+            <h2>Settings</h2>
+            <div style="flex:1"></div>
+            <button class="btn-reset-outlined" id="btn-reset">Reset to Default</button>
+            <div style="width: 16px;"></div>
+            <button class="icon-btn close-drawer" id="btn-close-settings">
+                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+        </div>
+        
+        <div class="drawer-content">
+            <div class="settings-group">
+                <h3 class="group-title">Citation Key</h3>
+                <label class="checkbox-row" style="margin-bottom: 8px;">
+                    <input type="checkbox" id="chk-keep-original" checked> 
+                    <strong>Keep Original Key</strong>
+                </label>
+                <div class="helper-text" style="margin-top:0; margin-bottom:16px;">(Do not rename citation keys)</div>
+                
+                <div class="input-wrapper">
+                    <input type="text" id="id-format" class="m3-input" value="[Auth][Year][Title]_[Venue]">
+                    <span class="helper-text">Vars: [Auth], [Year], [Title], [Venue]</span>
+                </div>
+            </div>
+
             <div class="divider"></div>
 
             <div class="settings-group">
-                <h3 class="group-title">Citation Key</h3>
-                <label class="checkbox-row">
-                    <input type="checkbox" id="chk-keep-original"> 
-                    <span>Keep Original Key</span>(Do not rename)
-                </label>
-                <div class="input-wrapper">
-                    <input type="text" id="id-format" class="m3-input" value="[Auth][Year][Title][Venue]">
-                    <span class="helper-text">Vars: [Auth], [Year], [Title], [Venue]</span>
-                </div>
+                <h3 class="group-title">Keep Fields</h3>
+                <div class="checkbox-list" id="fields-primary"></div>
+                <div class="checkbox-list hidden" id="fields-secondary"></div>
+                <button id="btn-toggle-fields" class="small-btn">
+                    <span>Show more</span>
+                    <svg viewBox="0 0 24 24" class="arrow-icon"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                </button>
             </div>
             
             <div class="divider"></div>
@@ -125,49 +199,39 @@
 
                 <div class="code-editor-wrapper" id="editor-wrapper">
                     <textarea id="mapping-rules" class="m3-input code-area" spellcheck="false"></textarea>
-                    
                     <button id="btn-expand-editor" class="icon-btn-ghost" title="Expand Editor">
                         <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
                     </button>
-                    
-                    <span class="helper-text">Format: <code>Regex => Abbr || Full Name</code></span>
+                </div>
+                <span class="helper-text">Format: <code>Regex => Abbr || Full Name</code></span>
+
+                <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+                    <button id="btn-export-rules" class="btn-outlined" style="padding: 6px 16px; font-size: 0.85rem; height: 32px;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" style="margin-right:6px"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="currentColor"/></svg>
+                        Export Learned Rules
+                    </button>
                 </div>
             </div>
-        </aside>
+            
 
-        <main class="workspace">
-            <div class="editor-section">
-                <label class="section-label">Input BibTeX</label>
-                <textarea id="input" class="m3-textarea" placeholder="Paste your messy BibTeX here..."></textarea>
-            </div>
+        </div>
+    </aside>
 
-            <div class="actions-bar">
-                <button id="btn-convert" class="btn-filled">
-                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z" fill="white"/></svg>
-                    Convert
-                </button>
-                <button id="btn-copy" class="btn-outlined">
-                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="currentColor"/></svg>
-                    Copy Result
-                </button>
-            </div>
-
-            <div class="editor-section">
-                <div class="output-header">
-                    <label class="section-label">Output</label>
-                    <div class="m3-tabs" id="format-tabs">
-                        <button class="tab-btn active" data-type="bibtex">BibTeX</button>
-                        <button class="tab-btn" data-type="mla">MLA</button>
-                        <button class="tab-btn" data-type="gbt">GB/T 7714</button>
-                        <div class="tab-indicator"></div>
-                    </div>
-                </div>
-                <textarea id="output" class="m3-textarea" readonly placeholder="Result will appear here..."></textarea>
-            </div>
-        </main>
-    </div>
 
     <div id="toast" class="toast">Copied to clipboard</div>
+
+    <div id="warning-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Validation Warnings</h3>
+                <button id="btn-close-modal" class="icon-btn">
+                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div id="warning-list-content" class="modal-content">
+                </div>
+        </div>
+    </div>
 
     <script type="module" src="js/main.js"></script>
 </body>

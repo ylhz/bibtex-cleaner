@@ -1,248 +1,484 @@
 import { CONSTANTS, ConfigManager } from './config.js';
-import { processEntries, parseMappingRules } from './processor.js';
-import { showToast } from './utils.js';
-
-// 导入策略
+import { processEntries, parseMappingRules, parseRawBibtex } from './processor.js';
+import { showToast, getTitleWord } from './utils.js'; 
 import { toBibTeX } from './formatters/bibtex.js';
 import { toMLA } from './formatters/mla.js';
 import { toGBT } from './formatters/gbt7714.js';
 
-// 策略映射
 const FORMATTERS = {
     'bibtex': (entries) => entries.map(toBibTeX).join('\n\n'),
     'mla': (entries) => entries.map(toMLA).join('\n\n'),
     'gbt': (entries) => entries.map((e, i) => toGBT(e, i)).join('\n')
 };
 
-// 全局状态
 let CURRENT_DATA = [];
 let CURRENT_TAB = 'bibtex';
+let AUTO_GENERATED_VENUE_WARNING = false; // 标记是否触发了自动提取
+// 新增：全局变量，用于存储用户刚才点击的搜索结果中的会议名
+let LAST_CLICKED_VENUE_HINT = null;
+// 新增：保存当前的警告列表，供弹窗使用
+let CURRENT_WARNINGS = [];
 
-// DOM 元素引用
 const dom = {
     input: document.getElementById('input'),
     output: document.getElementById('output'),
-    fieldsContainer: document.getElementById('fields-container'),
-    idFormat: document.getElementById('id-format'),
-    mappingRules: document.getElementById('mapping-rules'),
     btnConvert: document.getElementById('btn-convert'),
     btnCopy: document.getElementById('btn-copy'),
-    btnReset: document.getElementById('btn-reset'),
     tabs: document.querySelectorAll('.tab-btn'),
-    venueRadios: document.getElementsByName('venue-mode'),
-    // ⬇️⬇️⬇️ 之前漏掉了这一行，导致脚本崩溃 ⬇️⬇️⬇️
-    chkKeepOriginal: document.getElementById('chk-keep-original') ,
-    fieldsContainerPrimary: document.getElementById('fields-primary'),   // 新增
-    fieldsContainerSecondary: document.getElementById('fields-secondary'), // 新增
-    btnToggleFields: document.getElementById('btn-toggle-fields'),         // 新增
-    btnExpandEditor: document.getElementById('btn-expand-editor'),         // 新增
+    // Settings Drawer
+    fieldsContainerPrimary: document.getElementById('fields-primary'),
+    fieldsContainerSecondary: document.getElementById('fields-secondary'),
+    btnToggleFields: document.getElementById('btn-toggle-fields'),
+    idFormat: document.getElementById('id-format'),
+    chkKeepOriginal: document.getElementById('chk-keep-original'),
+    mappingRules: document.getElementById('mapping-rules'),
+    // 🚀 新增导出按钮
+    btnExportRules: document.getElementById('btn-export-rules'),
+    btnExpandEditor: document.getElementById('btn-expand-editor'),
     editorWrapper: document.getElementById('editor-wrapper'),
+    venueRadios: document.getElementsByName('venue-mode'),
+    btnReset: document.getElementById('btn-reset'),
+    // Drawer Control
+    btnOpenSettings: document.getElementById('btn-open-settings'),
+    btnCloseSettings: document.getElementById('btn-close-settings'),
+    settingsDrawer: document.getElementById('settings-drawer'),
+    drawerOverlay: document.getElementById('drawer-overlay'),
+    // Search
+    searchInput: document.getElementById('search-input'),
+    btnSearch: document.getElementById('btn-search'),
+    searchResultsList: document.getElementById('search-results-list'),
+    // 🚀 新增 Modal 相关 DOM
+    warningMsg: document.getElementById('venue-warning-msg'),
+    warningModal: document.getElementById('warning-modal'),
+    warningList: document.getElementById('warning-list-content'),
+    btnCloseModal: document.getElementById('btn-close-modal')
 };
 
-
-
-
-
-// ================= 初始化 =================
 function init() {
     renderFields();
     loadValuesToUI();
     setupEventListeners();
+    setupAutoConvertListeners(); // 监听设置变化
 }
 
-// function renderFields() {
-//     dom.fieldsContainer.innerHTML = '';
-//     CONSTANTS.ALL_FIELDS.forEach(f => {
-//         const label = document.createElement('label');
-//         label.className = 'checkbox-label'; // 修正类名以匹配 CSS
-//         label.innerHTML = `<input type="checkbox" value="${f}"> <span>${f}</span>`;
-//         dom.fieldsContainer.appendChild(label);
-//     });
-// }
-
-// 1. 修改 renderFields：前6个放上面，剩下的放下面
 function renderFields() {
-    dom.fieldsContainerPrimary.innerHTML = '';
-    dom.fieldsContainerSecondary.innerHTML = '';
-    
-    CONSTANTS.ALL_FIELDS.forEach((f, index) => {
+    dom.fieldsContainerPrimary.innerHTML = ''; dom.fieldsContainerSecondary.innerHTML = '';
+    CONSTANTS.ALL_FIELDS.forEach((f, i) => {
         const label = document.createElement('label');
         label.className = 'checkbox-row';
         label.innerHTML = `<input type="checkbox" value="${f}"> <span>${f}</span>`;
-        
-        // 逻辑：前 6 个放 Primary，后面的放 Secondary
-        if (index < 6) {
-            dom.fieldsContainerPrimary.appendChild(label);
-        } else {
-            dom.fieldsContainerSecondary.appendChild(label);
-        }
+        (i < 6 ? dom.fieldsContainerPrimary : dom.fieldsContainerSecondary).appendChild(label);
     });
 }
 
 function loadValuesToUI() {
-    // Checkbox 加载
-    const savedFields = ConfigManager.getFields();
-
-    // 合并查找两个容器里的 input
-    const allChecks = [
-        ...dom.fieldsContainerPrimary.querySelectorAll('input'),
-        ...dom.fieldsContainerSecondary.querySelectorAll('input')
-    ];
-    
-    allChecks.forEach(c => c.checked = savedFields.includes(c.value));
-    
-
-    // Inputs 加载
+    const saved = ConfigManager.getFields();
+    [...dom.fieldsContainerPrimary.querySelectorAll('input'), ...dom.fieldsContainerSecondary.querySelectorAll('input')]
+        .forEach(c => c.checked = saved.includes(c.value));
     dom.idFormat.value = ConfigManager.getFormat();
     dom.mappingRules.value = ConfigManager.getMappings();
-
-    // Venue Mode 加载
-    const mode = ConfigManager.getVenueMode();
-    dom.venueRadios.forEach(r => {
-        if(r.value === mode) r.checked = true;
-    });
-
-    // 加载 Keep Original 状态
-    const keepOriginal = ConfigManager.getKeepOriginal();
-    // 如果 dom.chkKeepOriginal 没获取到，这里就会报错停止
-    if (dom.chkKeepOriginal) {
-        dom.chkKeepOriginal.checked = keepOriginal;
-        updateIdFormatState(); // 更新输入框禁用状态
+    dom.venueRadios.forEach(r => { if(r.value === ConfigManager.getVenueMode()) r.checked = true; });
+    if(dom.chkKeepOriginal) {
+        dom.chkKeepOriginal.checked = ConfigManager.getKeepOriginal();
+        updateIdFormatState();
+    }
+    // 3. 强制重置 Show More 的 UI 状态
+    if (dom.btnToggleFields) {
+        const icon = dom.btnToggleFields.querySelector('svg');
+        const span = dom.btnToggleFields.querySelector('span');
+        // 默认收起
+        dom.fieldsContainerSecondary.classList.add('hidden');
+        span.textContent = 'Show more';
+        icon.classList.remove('rotate');
     }
 }
 
 function saveValuesFromUI() {
-    const allChecks = [
-        ...dom.fieldsContainerPrimary.querySelectorAll('input:checked'),
-        ...dom.fieldsContainerSecondary.querySelectorAll('input:checked')
-    ];
-    const checks = allChecks.map(c => c.value);
-
+    const checks = [...dom.fieldsContainerPrimary.querySelectorAll('input:checked'), ...dom.fieldsContainerSecondary.querySelectorAll('input:checked')].map(c => c.value);
     ConfigManager.setFields(checks);
     ConfigManager.setFormat(dom.idFormat.value);
     ConfigManager.setMappings(dom.mappingRules.value);
-    
-    // 保存 Venue Mode
-    const selectedMode = Array.from(dom.venueRadios).find(r => r.checked)?.value || 'abbr';
-    ConfigManager.setVenueMode(selectedMode);
-
-    if (dom.chkKeepOriginal) {
-        ConfigManager.setKeepOriginal(dom.chkKeepOriginal.checked);
-    }
+    ConfigManager.setVenueMode([...dom.venueRadios].find(r => r.checked)?.value || 'abbr');
+    if(dom.chkKeepOriginal) ConfigManager.setKeepOriginal(dom.chkKeepOriginal.checked);
 }
 
-// 辅助：控制 ID 输入框是否禁用
 function updateIdFormatState() {
-    if (!dom.chkKeepOriginal) return;
-    
-    if (dom.chkKeepOriginal.checked) {
-        dom.idFormat.disabled = true;
-        dom.idFormat.style.opacity = '0.5';
-    } else {
-        dom.idFormat.disabled = false;
-        dom.idFormat.style.opacity = '1';
+    if(dom.chkKeepOriginal) {
+        dom.idFormat.disabled = dom.chkKeepOriginal.checked;
+        dom.idFormat.style.opacity = dom.chkKeepOriginal.checked ? '0.5' : '1';
     }
 }
 
-// ================= 事件处理 =================
 function setupEventListeners() {
-    // 转换按钮
-    dom.btnConvert.addEventListener('click', () => {
-        saveValuesFromUI();
-        const rawInput = dom.input.value;
-        if (!rawInput.trim()) return;
-
-        const rules = parseMappingRules(dom.mappingRules.value);
-        const format = dom.idFormat.value;
-        const keepFields = ConfigManager.getFields();
-        const venueMode = ConfigManager.getVenueMode();
-        const keepOriginal = ConfigManager.getKeepOriginal();
-
-        // 处理数据
-        CURRENT_DATA = processEntries(rawInput, rules, format, keepFields, venueMode, keepOriginal);
-        
-        renderOutput();
-    });
-
-    // 复制按钮
-    dom.btnCopy.addEventListener('click', () => {
-        dom.output.select();
-        document.execCommand('copy');
-        showToast("Copied to clipboard");
-    });
-
-    // 重置按钮
-    dom.btnReset.addEventListener('click', () => {
-        if(confirm("Reset to default settings? This will clear your custom rules.")) {
-            ConfigManager.reset();
-            loadValuesToUI();
-        }
-    });
-
-    // Tab 切换
-    dom.tabs.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            // UI 切换
-            dom.tabs.forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            
-            // 逻辑切换
-            CURRENT_TAB = e.target.dataset.type;
-            renderOutput();
-        });
-    });
-
-    // 监听 Keep Original 变化
-    if (dom.chkKeepOriginal) {
-        dom.chkKeepOriginal.addEventListener('change', () => {
-            updateIdFormatState();
-        });
+    // 1. 转换按钮
+    if (dom.btnConvert) {
+        dom.btnConvert.addEventListener('click', runConversion); // 抽离出 runConversion 函数
     }
-
-    // --- 新增：展开/收起更多字段 ---
-    dom.btnToggleFields.addEventListener('click', () => {
-        const isHidden = dom.fieldsContainerSecondary.classList.contains('hidden');
-        const icon = dom.btnToggleFields.querySelector('svg');
-        const span = dom.btnToggleFields.querySelector('span');
-
-        if (isHidden) {
-            dom.fieldsContainerSecondary.classList.remove('hidden');
-            span.textContent = 'Show less';
-            icon.classList.add('rotate'); // 箭头旋转
-        } else {
-            dom.fieldsContainerSecondary.classList.add('hidden');
-            span.textContent = 'Show more';
-            icon.classList.remove('rotate');
-        }
-    });
-
-    // --- 新增：编辑器全屏切换 ---
-    dom.btnExpandEditor.addEventListener('click', () => {
-        dom.editorWrapper.classList.toggle('fullscreen');
-        
-        // 切换图标 (放大 <-> 缩小)
-        const isFullscreen = dom.editorWrapper.classList.contains('fullscreen');
-        const path = dom.btnExpandEditor.querySelector('path');
-        if (isFullscreen) {
-            // 缩小图标
-            path.setAttribute('d', 'M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z');
-        } else {
-            // 放大图标
-            path.setAttribute('d', 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z');
-        }
-    });
-
-}
-
-// ================= 渲染输出 =================
-function renderOutput() {
-    if (!CURRENT_DATA || CURRENT_DATA.length === 0) return;
     
-    const formatter = FORMATTERS[CURRENT_TAB];
-    if (formatter) {
-        dom.output.value = formatter(CURRENT_DATA);
+
+    // // 2. 复制按钮
+    // if (dom.btnCopy) {
+    //     dom.btnCopy.addEventListener('click', () => {
+    //         dom.output.select();
+    //         document.execCommand('copy');
+    //         showToast("Copied to clipboard");
+    //     });
+    // }
+
+    // // 3. 设置抽屉开关 (确保 ID 存在)
+    // if (dom.btnOpenSettings && dom.settingsDrawer) {
+    //     dom.btnOpenSettings.addEventListener('click', () => {
+    //         dom.settingsDrawer.classList.add('open');
+    //         dom.drawerOverlay.classList.add('open');
+    //     });
+    // }
+
+    // // 关闭抽屉
+    // const closeDrawer = () => {
+    //     dom.settingsDrawer.classList.remove('open');
+    //     dom.drawerOverlay.classList.remove('open');
+    // };
+    // if (dom.btnCloseSettings) dom.btnCloseSettings.addEventListener('click', closeDrawer);
+    // if (dom.drawerOverlay) dom.drawerOverlay.addEventListener('click', closeDrawer);
+
+    // // 4. Show More 切换
+    // if (dom.btnToggleFields) {
+    //     dom.btnToggleFields.addEventListener('click', () => {
+    //         // 切换 hidden 类
+    //         const isHidden = dom.fieldsContainerSecondary.classList.toggle('hidden');
+            
+    //         // 更新按钮文字
+    //         const span = dom.btnToggleFields.querySelector('span');
+    //         if (span) span.textContent = isHidden ? 'Show more' : 'Show less';
+            
+    //         // 旋转图标
+    //         const icon = dom.btnToggleFields.querySelector('svg');
+    //         if (icon) icon.classList.toggle('rotate', !isHidden);
+    //     });
+    // }
+
+
+    
+    dom.btnCopy.addEventListener('click', () => { dom.output.select(); document.execCommand('copy'); showToast("Copied!"); });
+    dom.btnReset.addEventListener('click', () => { if(confirm("Reset to default?")) { ConfigManager.reset(); loadValuesToUI(); } });
+    dom.tabs.forEach(btn => btn.addEventListener('click', (e) => {
+        dom.tabs.forEach(b => b.classList.remove('active')); e.target.classList.add('active');
+        CURRENT_TAB = e.target.dataset.type; renderOutput();
+    }));
+    if(dom.chkKeepOriginal) dom.chkKeepOriginal.addEventListener('change', updateIdFormatState);
+    if(dom.btnToggleFields) dom.btnToggleFields.addEventListener('click', () => {
+        const hidden = dom.fieldsContainerSecondary.classList.toggle('hidden');
+        dom.btnToggleFields.querySelector('span').textContent = hidden ? 'Show more' : 'Show less';
+        dom.btnToggleFields.querySelector('svg').classList.toggle('rotate');
+    });
+    if(dom.btnExpandEditor) dom.btnExpandEditor.addEventListener('click', () => {
+        dom.editorWrapper.classList.toggle('fullscreen');
+    });
+
+    // Drawer
+    const toggleDrawer = (open) => {
+        dom.settingsDrawer.classList.toggle('open', open);
+        dom.drawerOverlay.classList.toggle('open', open);
+    };
+    if(dom.btnOpenSettings) dom.btnOpenSettings.addEventListener('click', () => toggleDrawer(true));
+    if(dom.btnCloseSettings) dom.btnCloseSettings.addEventListener('click', () => toggleDrawer(false));
+    if(dom.drawerOverlay) dom.drawerOverlay.addEventListener('click', () => toggleDrawer(false));
+    // Search
+    if(dom.btnSearch) {
+        dom.btnSearch.addEventListener('click', performSearch);
+        dom.searchInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') performSearch(); });
+    }
+    // 🚀 新增：点击警告文字，打开弹窗
+    if (dom.warningMsg) {
+        dom.warningMsg.style.cursor = 'pointer';
+        dom.warningMsg.addEventListener('click', openWarningModal);
+    }
+    // 🚀 新增：关闭弹窗
+    if (dom.btnCloseModal) {
+        dom.btnCloseModal.addEventListener('click', closeWarningModal);
+    }
+    if (dom.warningModal) {
+        dom.warningModal.addEventListener('click', (e) => {
+            if (e.target === dom.warningModal) closeWarningModal();
+        });
+    }
+    // 🚀 导出按钮监听
+    if (dom.btnExportRules) {
+        dom.btnExportRules.addEventListener('click', exportCustomRules);
     }
 }
 
-// 启动
+
+// 新增：监听设置变化，立即触发转换
+function setupAutoConvertListeners() {
+    // 监听复选框
+    const allChecks = [
+        ...dom.fieldsContainerPrimary.querySelectorAll('input'),
+        ...dom.fieldsContainerSecondary.querySelectorAll('input'),
+        dom.chkKeepOriginal
+    ];
+    allChecks.forEach(chk => chk.addEventListener('change', () => dom.btnConvert.click()));
+
+    // 监听 Radio
+    dom.venueRadios.forEach(r => r.addEventListener('change', () => dom.btnConvert.click()));
+
+    // 监听输入框 (防抖)
+    let timeout;
+    const inputs = [dom.idFormat, dom.mappingRules];
+    inputs.forEach(input => {
+        input.addEventListener('input', () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => dom.btnConvert.click(), 500);
+        });
+    });
+}
+
+
+// 核心转换逻辑封装
+function runConversion() {
+    saveValuesFromUI();
+    const rawInput = dom.input.value;
+    if (!rawInput.trim()) return;
+
+    // 解析规则
+    const rules = parseMappingRules(dom.mappingRules.value);
+    
+    // 执行处理 (传入新的回调函数用于检测未知会议)
+    // 调用 processor，传入 LAST_CLICKED_VENUE_HINT
+    const resultObj = processEntries(
+        rawInput, 
+        rules, 
+        dom.idFormat.value, 
+        ConfigManager.getFields(), 
+        ConfigManager.getVenueMode(), 
+        ConfigManager.getKeepOriginal(),
+        LAST_CLICKED_VENUE_HINT, // 传入 DBLP 提示
+        ConfigManager.getCustomRules() // 传入本地学习到的规则
+    );
+    
+    CURRENT_DATA = resultObj.data;
+    CURRENT_WARNINGS = resultObj.warnings; // 保存警告
+    
+    // 渲染结果
+    renderOutput();
+    handleWarnings(CURRENT_WARNINGS);
+}
+
+
+
+// 5. 智能提取缩写算法
+function extractAbbrSmartly(fullName) {
+    if (!fullName) return "CONF";
+    // 简单策略：提取大写字母
+    // 排除一些常见虚词的首字母干扰 (如 "The", "Of", "International", "Conference" 等其实通常保留)
+    // 这里做一个简单的提取：取所有大写字母，如果少于2个，取前4个字符
+    const matches = fullName.match(/[A-Z]/g);
+    if (matches && matches.length >= 2) {
+        return matches.join('');
+    }
+    // Fallback
+    return fullName.split(/\s+/)[0].toUpperCase().replace(/[^A-Z]/g, '');
+}
+
+// Search 排序优化
+async function performSearch() {
+    const qRaw = dom.searchInput.value.trim();
+    if (!qRaw) return;
+    const qNorm = qRaw.toLowerCase().replace(/[^a-z0-9]/g, ''); // 规范化查询
+
+    dom.searchResultsList.innerHTML = '<div class="empty-state">Searching...</div>';
+    
+    try {
+        const res = await fetch(`https://dblp.org/search/publ/api?q=${encodeURIComponent(qRaw)}&format=json&h=30`);
+        const data = await res.json();
+        const hits = data.result.hits.hit;
+        
+        if (!hits || !hits.length) {
+            dom.searchResultsList.innerHTML = '<div class="empty-state">No results found.</div>';
+            return;
+        }
+
+        // 排序逻辑
+        hits.sort((a, b) => {
+            const titleA = (a.info.title || "").toLowerCase().replace(/[^a-z0-9]/g, '');
+            const titleB = (b.info.title || "").toLowerCase().replace(/[^a-z0-9]/g, '');
+            
+            // 1. 完全一致 (规范化后长度相等且内容相等)
+            const exactA = titleA === qNorm;
+            const exactB = titleB === qNorm;
+            if (exactA && !exactB) return -1;
+            if (!exactA && exactB) return 1;
+
+            // 2. 多余单词越少越好 (即：总长度越接近查询长度越好)
+            // 前提是包含查询词 (DBLP API 已经帮我们过滤了包含关系，这里主要比长度)
+            return titleA.length - titleB.length;
+        });
+
+        renderSearchResults(hits);
+    } catch (e) {
+        console.error(e);
+        dom.searchResultsList.innerHTML = '<div class="empty-state">Error searching DBLP.</div>';
+    }
+}
+
+// 处理警告 UI
+function handleWarnings(warnings) {
+    if (!dom.warningMsg) return;
+
+    if (warnings && warnings.length > 0) {
+        const count = warnings.length;
+        // 显示文本： "⚠️ 3 Warnings (Click to view)"
+        dom.warningMsg.textContent = `⚠️ ${count} Warning${count > 1 ? 's' : ''} (Click to view)`;
+        dom.warningMsg.style.display = 'block';
+        dom.output.style.borderColor = '#D32F2F';
+        dom.output.style.boxShadow = '0 0 0 1px #D32F2F';
+    } else {
+        dom.warningMsg.style.display = 'none';
+        dom.output.style.borderColor = ''; 
+        dom.output.style.boxShadow = '';
+    }
+}
+
+// 🚀 弹窗逻辑
+function openWarningModal() {
+    if (!CURRENT_WARNINGS || CURRENT_WARNINGS.length === 0) return;
+    dom.warningList.innerHTML = '';
+    
+    CURRENT_WARNINGS.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'warning-item';
+        div.textContent = msg;
+        dom.warningList.appendChild(div);
+    });
+    
+    dom.warningModal.classList.add('show');
+}
+
+function closeWarningModal() {
+    dom.warningModal.classList.remove('show');
+}
+
+// 输出渲染 (处理红色警告)
+function renderOutput() {
+    if (!CURRENT_DATA || CURRENT_DATA.length === 0) {
+        dom.output.value = "";
+        return;
+    }
+    
+    let result = FORMATTERS[CURRENT_TAB](CURRENT_DATA);
+    
+    // 5. 注入红色警告 (仅在 BibTeX 模式下，且确实触发了智能提取)
+    if (CURRENT_TAB === 'bibtex' && AUTO_GENERATED_VENUE_WARNING) {
+        const warning = "% ⚠️ WARNING: Some venue abbreviations were auto-generated and may not be standard.\n% Please check 'Venue Mappings' settings.\n\n";
+        result = warning + result;
+        // 注意：textarea 无法渲染红色文字，只能是纯文本提示。
+        // 如果要红色高亮，需要把 textarea 换成 div contenteditable，工程量巨大。
+        // 这里我们用显眼的 ASCII 装饰。
+    }
+    
+    dom.output.value = result;
+}
+
+// 修改：renderSearchResults (点击时保存 hint)
+function renderSearchResults(hits) {
+    dom.searchResultsList.innerHTML = '';
+    hits.forEach(hit => {
+        const div = document.createElement('div'); div.className = 'result-item';
+        const info = hit.info;
+        const authors = info.authors ? (Array.isArray(info.authors.author) ? info.authors.author.map(a=>a.text).join(', ') : info.authors.author.text || info.authors.author) : 'Unknown';
+        
+        div.innerHTML = `<div class="result-title">${info.title}</div><div class="result-meta">${authors}</div><div class="result-meta" style="color:var(--md-sys-color-primary);margin-top:4px;">${info.venue || 'Unknown'} ${info.year || ''}</div>`;
+        
+        div.addEventListener('click', async () => {
+            document.querySelectorAll('.result-item').forEach(el => el.classList.remove('active')); 
+            div.classList.add('active');
+            
+            // 🚀 关键：保存 DBLP 返回的 venue (例如 "WACV")
+            LAST_CLICKED_VENUE_HINT = info.venue; 
+            
+            await fetchAndFillBibtex(info.key);
+        });
+        dom.searchResultsList.appendChild(div);
+    });
+}
+
+// 修改：fetchAndFillBibtex (防止 input 修改时 hint 失效)
+async function fetchAndFillBibtex(key) {
+    try {
+        showToast("Fetching BibTeX...");
+        const res = await fetch(`https://dblp.org/rec/${key}.bib`);
+        if(!res.ok) throw new Error("Err");
+
+        const bibText = await res.text();
+                dom.input.value = bibText;
+        
+                // ===========================================================
+                // 🧠 自动学习逻辑 (Auto-Learn)
+                // ===========================================================
+                if (LAST_CLICKED_VENUE_HINT) {
+                    // 1. 解析刚刚抓取到的 BibTeX，获取其“官方全称”
+                    const entries = parseRawBibtex(bibText);
+                    if (entries.length > 0) {
+                        const entry = entries[0];
+                        const fullVenue = entry.fields['booktitle'] || entry.fields['journal'];
+                        
+                        if (fullVenue) {
+                            // 2. 将 "全称" -> "缩写(来自DBLP点击)" 存入本地
+                            // 注意：这里我们存的是原始全称 (如 {IEEE} Conf...)，保证下次能全字匹配
+                            ConfigManager.addCustomRule(fullVenue, LAST_CLICKED_VENUE_HINT);
+                        }
+                    }
+                }
+        
+        
+        // 自动触发转换
+        setTimeout(() => dom.btnConvert.click(), 100);
+        showToast("Imported & Rule Learned!"); // 提示用户已学习
+    } catch(e) { 
+        console.error(e);
+        showToast("Failed to fetch"); 
+    }
+}
+
+// 🚀 导出功能
+function exportCustomRules() {
+    const rules = ConfigManager.getCustomRules();
+    const keys = Object.keys(rules);
+    if (keys.length === 0) {
+        alert("No custom rules learned yet.");
+        return;
+    }
+
+    // 格式化为: ^Full Name$ => ABBR || Full Name
+    // 使用 ^$ 锚定，确保是 Strict Match
+    const lines = keys.map(full => {
+        // 需要转义正则中的特殊字符 (如 +, ., (, ))
+        const escapedFull = full.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
+        const abbr = rules[full];
+        return `^${escapedFull}$ => ${abbr} || ${full}`;
+    });
+
+    const text = lines.join('\n');
+    
+    // 创建一个临时文本框让用户复制，或者直接复制到剪贴板
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("Rules copied to clipboard!");
+    }).catch(() => {
+        // Fallback
+        console.log(text);
+        alert("Check console for rules (Copy failed)");
+    });
+}
+
+
+// 补充：监听 Input 变化，如果用户手动修改了 BibTeX，可能之前的 Hint 就不适用了
+// 但考虑到用户体验，我们可以选择保留 Hint 或者清空。
+// 建议：如果用户清空了 Input，则清空 Hint。
+dom.input.addEventListener('input', (e) => {
+    if (!e.target.value.trim()) {
+        LAST_CLICKED_VENUE_HINT = null;
+    }
+});
+
+
 init();
