@@ -66,7 +66,10 @@ function renderFields() {
     CONSTANTS.ALL_FIELDS.forEach((f, i) => {
         const label = document.createElement('label');
         label.className = 'checkbox-row';
-        label.innerHTML = `<input type="checkbox" value="${f}"> <span>${f}</span>`;
+        label.innerHTML = `
+            <input type="checkbox" name="keep_fields" id="chk-field-${f}" value="${f}"> 
+            <span>${f}</span>
+        `;
         (i < 6 ? dom.fieldsContainerPrimary : dom.fieldsContainerSecondary).appendChild(label);
     });
 }
