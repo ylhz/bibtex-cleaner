@@ -45,7 +45,6 @@ export function parseMappingRules(text) {
 export function processEntries(inputText, mappingRules, idFormat, keepFields, venueMode = 'abbr', keepOriginal = false, hintVenue = null, customRules = {}) {
     const rawEntries = parseRawBibtex(inputText); // 这里的 parseRawBibtex 保持原样即可，不用改
 
-    
     const warnings = []; // 改名：从 unknowns 改为 warnings，涵盖范围更广
     
     const processedEntries = rawEntries.map(entry => {
@@ -54,6 +53,19 @@ export function processEntries(inputText, mappingRules, idFormat, keepFields, ve
             fields: { ...entry.fields },
             keepFields: keepFields
         };
+
+        // =========================================================
+        // 🧼 核心修复：清洗 DBLP 作者名中的消歧义数字
+        // =========================================================
+        // 正则解释：匹配 "空格+4位数字"，将其替换为空字符串
+        if (newEntry.fields['author']) {
+            newEntry.fields['author'] = newEntry.fields['author'].replace(/ \d{4}/g, '');
+        }
+        // 保险起见，editor 字段也洗一下
+        if (newEntry.fields['editor']) {
+            newEntry.fields['editor'] = newEntry.fields['editor'].replace(/ \d{4}/g, '');
+        }
+        
 
         // --- 会议/期刊名映射逻辑 ---
         let venueFull = newEntry.fields['booktitle'] || newEntry.fields['journal'] || "";
