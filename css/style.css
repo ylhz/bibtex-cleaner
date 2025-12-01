@@ -255,13 +255,13 @@ body {
 /* ================= Settings Drawer ================= */
 .drawer-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.4); z-index: 199; opacity: 0; visibility: hidden; transition: opacity 0.3s;
+    background: rgba(0,0,0,0.4); z-index: 1100; opacity: 0; visibility: hidden; transition: opacity 0.3s;
 }
 .drawer-overlay.open { opacity: 1; visibility: visible; }
 
 .settings-drawer {
     position: fixed; top: 0; right: -420px; width: 420px; height: 100vh;
-    background: #FFF; z-index: 200; box-shadow: -4px 0 16px rgba(0,0,0,0.1);
+    background: #FFF; z-index: 1101; box-shadow: -4px 0 16px rgba(0,0,0,0.1);
     transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex; flex-direction: column;
 }
