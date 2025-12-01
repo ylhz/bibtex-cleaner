@@ -26,6 +26,8 @@ body {
     line-height: 1.5;
     min-height: 100vh;
     display: flex; flex-direction: column;
+
+    padding-top: 64px;
 }
 
 .hidden { display: none !important; } /* 强制隐藏，修复 Show More */
@@ -36,7 +38,15 @@ body {
     border-bottom: 1px solid rgba(0,0,0,0.08);
     height: 64px; padding: 0 24px;
     display: flex; justify-content: space-between; align-items: center;
-    position: sticky; top: 0; z-index: 100;
+    /* 🚀 修改开始：从 sticky 改为 fixed */
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%; /* 强制撑满宽度 */
+    box-sizing: border-box; /* 防止 padding 把宽度撑爆 */
+    z-index: 1000; /* 保证层级最高，不被其他内容遮挡 */
+    /* 🚀 修改结束 */
+    /* position: sticky; top: 0; z-index: 100; */
 }
 .branding { display: flex; align-items: center; gap: 12px; }
 .app-logo-small { width: 32px; height: 32px; }
