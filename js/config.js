@@ -6,7 +6,8 @@ export const CONSTANTS = {
     ALL_FIELDS: ['author', 'title', 'booktitle', 'journal', 'year', 'pages', 'volume', 'number', 'doi', 'url', 'eprint', 'publisher', 'editor', 'month'],
     DEFAULT_FORMAT: "[Auth][Year][Title]_[Venue]",
     DEFAULT_MAPPINGS: VENUE_MAPPING_DATA,
-    DEFAULT_KEEP_ORIGINAL: true // 7. 默认配置改为 true
+    DEFAULT_KEEP_ORIGINAL: true, // 7. 默认配置改为 true
+    DEFAULT_SEARCH_MODE: 'simple' // 🚀 新增默认值：简版
 };
 
 
@@ -56,6 +57,10 @@ export const ConfigManager = {
             console.log(`[Auto-Learn] Learned: "${fullName}" => "${abbr}"`);
         }
     },
+
+    // 🚀 新增：搜索模式 (simple | detailed)
+    getSearchMode() { return this.get('bib-search-mode', CONSTANTS.DEFAULT_SEARCH_MODE); },
+    setSearchMode(v) { this.set('bib-search-mode', v); },
 
     reset() { localStorage.clear(); }
 };

@@ -159,6 +159,26 @@
         
         <div class="drawer-content">
             <div class="settings-group">
+                <h3 class="group-title">Search Retrieval Mode</h3>
+                <div class="venue-mode-selector">
+                    <label class="mode-chip">
+                        <input type="radio" name="search-mode" value="simple" checked>
+                        <span class="chip-label">⚡ Fast (Metadata)</span>
+                    </label>
+                    <label class="mode-chip">
+                        <input type="radio" name="search-mode" value="detailed">
+                        <span class="chip-label">🐢 Precise (Fetch .bib)</span>
+                    </label>
+                </div>
+                <div class="helper-text" style="margin-top:4px; line-height:1.4">
+                    <strong>Fast:</strong> Instant, uses search metadata. (Recommended)<br>
+                    <strong>Precise:</strong> Slower, fetches official .bib from DBLP.
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="settings-group">
                 <h3 class="group-title">Citation Key</h3>
                 <label class="checkbox-row" style="margin-bottom: 8px;">
                     <input type="checkbox" id="chk-keep-original" checked> 

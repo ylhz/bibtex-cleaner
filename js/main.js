@@ -51,7 +51,9 @@ const dom = {
     warningMsg: document.getElementById('venue-warning-msg'),
     warningModal: document.getElementById('warning-modal'),
     warningList: document.getElementById('warning-list-content'),
-    btnCloseModal: document.getElementById('btn-close-modal')
+    btnCloseModal: document.getElementById('btn-close-modal'),
+    // 搜索模式，简单-完整
+    searchRadios: document.getElementsByName('search-mode'), // 🚀 新增
 };
 
 function init() {
@@ -94,6 +96,12 @@ function loadValuesToUI() {
         span.textContent = 'Show more';
         icon.classList.remove('rotate');
     }
+
+    // 🚀 加载搜索模式设置
+    const searchMode = ConfigManager.getSearchMode();
+    dom.searchRadios.forEach(r => { 
+        if(r.value === searchMode) r.checked = true; 
+    });
 }
 
 function saveValuesFromUI() {
@@ -103,6 +111,8 @@ function saveValuesFromUI() {
     ConfigManager.setMappings(dom.mappingRules.value);
     ConfigManager.setVenueMode([...dom.venueRadios].find(r => r.checked)?.value || 'abbr');
     if(dom.chkKeepOriginal) ConfigManager.setKeepOriginal(dom.chkKeepOriginal.checked);
+    // 🚀 保存搜索模式
+    ConfigManager.setSearchMode([...dom.searchRadios].find(r => r.checked)?.value || 'simple');
 }
 
 function updateIdFormatState() {
@@ -118,6 +128,17 @@ function setupEventListeners() {
         dom.btnConvert.addEventListener('click', runConversion); // 抽离出 runConversion 函数
     }
     
+    // 🚀 新增：监听搜索模式切换 (Fast vs Precise)
+    // 一旦用户切换选项，立即保存到 LocalStorage
+    if (dom.searchRadios) {
+        dom.searchRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                saveValuesFromUI();
+                // 可选：给个小提示告诉用户设置已保存
+                showToast("Search mode saved"); 
+            });
+        });
+    }
 
     // // 2. 复制按钮
     // if (dom.btnCopy) {
@@ -187,9 +208,17 @@ function setupEventListeners() {
     if(dom.btnCloseSettings) dom.btnCloseSettings.addEventListener('click', () => toggleDrawer(false));
     if(dom.drawerOverlay) dom.drawerOverlay.addEventListener('click', () => toggleDrawer(false));
     // Search
-    if(dom.btnSearch) {
-        dom.btnSearch.addEventListener('click', performSearch);
-        dom.searchInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') performSearch(); });
+    // 🚀 修复搜索按钮和回车键的监听逻辑
+    if (dom.btnSearch) {
+        // 修改前：dom.btnSearch.addEventListener('click', performSearch);
+        // 修改后：使用匿名函数包裹，确保不传 Event 对象
+        dom.btnSearch.addEventListener('click', () => performSearch(false));
+        
+        dom.searchInput.addEventListener('keydown', (e) => { 
+            if(e.key === 'Enter') {
+                performSearch(false); // 明确传入 false
+            }
+        });
     }
     // 🚀 新增：点击警告文字，打开弹窗
     if (dom.warningMsg) {
@@ -209,6 +238,7 @@ function setupEventListeners() {
     if (dom.btnExportRules) {
         dom.btnExportRules.addEventListener('click', exportCustomRules);
     }
+    
 }
 
 
@@ -284,40 +314,101 @@ function extractAbbrSmartly(fullName) {
 }
 
 // Search 排序优化
-async function performSearch() {
+// 修改 performSearch 函数签名，增加 forceDeep 参数
+async function performSearch(forceDeep = false) {
+    // 🛡️ 防御性编程：如果传入的不是布尔值（比如是 Event 对象），强制设为 false
+    if (typeof forceDeep !== 'boolean') forceDeep = false;
+
     const qRaw = dom.searchInput.value.trim();
     if (!qRaw) return;
-    const qNorm = qRaw.toLowerCase().replace(/[^a-z0-9]/g, ''); // 规范化查询
+    
+    // 规范化查询词 (用于排序比对)
+    const qNorm = qRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-    dom.searchResultsList.innerHTML = '<div class="empty-state">Searching...</div>';
+    // 只有在第一次搜索时才清空列表显示 Loading
+    // 如果是点击"Deep Search"，我们在保留原列表的基础上更新，体验更好
+    if (!forceDeep) {
+        dom.searchResultsList.innerHTML = '<div class="empty-state">Searching...</div>';
+    } else {
+        // 给按钮变个状态，提示正在加载
+        const btn = document.getElementById('btn-deep-search');
+        if (btn) btn.textContent = "Loading 1000 results...";
+    }
+    
+    // 1. 决定搜索深度：默认 100，深度模式 1000 (DBLP API 上限)
+    const limit = forceDeep ? 1000 : 100;
     
     try {
-        const res = await fetch(`https://dblp.org/search/publ/api?q=${encodeURIComponent(qRaw)}&format=json&h=30`);
+        const res = await fetch(`https://dblp.org/search/publ/api?q=${encodeURIComponent(qRaw)}&format=json&h=${limit}`);
         const data = await res.json();
-        const hits = data.result.hits.hit;
         
-        if (!hits || !hits.length) {
+        // 2. 获取数据
+        const hits = data.result.hits.hit || [];
+        const totalMatches = parseInt(data.result.hits['@total'] || 0);
+        
+        if (hits.length === 0) {
             dom.searchResultsList.innerHTML = '<div class="empty-state">No results found.</div>';
             return;
         }
 
-        // 排序逻辑
+        // 3. 强力排序 (完全匹配优先 > 长度越短越好)
         hits.sort((a, b) => {
             const titleA = (a.info.title || "").toLowerCase().replace(/[^a-z0-9]/g, '');
             const titleB = (b.info.title || "").toLowerCase().replace(/[^a-z0-9]/g, '');
             
-            // 1. 完全一致 (规范化后长度相等且内容相等)
             const exactA = titleA === qNorm;
             const exactB = titleB === qNorm;
+            
             if (exactA && !exactB) return -1;
             if (!exactA && exactB) return 1;
-
-            // 2. 多余单词越少越好 (即：总长度越接近查询长度越好)
-            // 前提是包含查询词 (DBLP API 已经帮我们过滤了包含关系，这里主要比长度)
+            
+            // 如果都匹配(或都不匹配)，短的排前面 (原版通常比衍生版标题短)
             return titleA.length - titleB.length;
         });
 
+        // 4. 渲染列表
         renderSearchResults(hits);
+
+        // =========================================================
+        // 🚀 核心新增：底部提示与深度搜索按钮
+        // =========================================================
+        // 触发条件：
+        // 1. 当前不是深度模式 (!forceDeep)
+        // 2. 返回数量达到了我们设定的限制 (hits.length >= limit)
+        // 3. API 告诉我们总结果数其实还有更多 (totalMatches > limit)
+        console.log(`搜索结果统计: 当前显示 ${hits.length} 条, 设限 ${limit} 条, 总共 ${totalMatches} 条`);
+        if (!forceDeep && hits.length >= limit && totalMatches > limit) {
+            const warningDiv = document.createElement('div');
+            // 样式美化
+            warningDiv.style.padding = '16px';
+            warningDiv.style.textAlign = 'center';
+            warningDiv.style.fontSize = '0.85rem';
+            warningDiv.style.color = '#666';
+            warningDiv.style.borderTop = '1px solid #eee';
+            warningDiv.style.background = '#f8f9fa';
+            warningDiv.style.cursor = 'default';
+            
+            warningDiv.innerHTML = `
+                <p style="margin: 0 0 10px 0; font-weight: 500;">
+                    ⚠️ Showing top ${limit} of ${totalMatches} results.
+                </p>
+                <p style="margin: 0 0 12px 0; font-size: 0.8rem; color: #888;">
+                    Target paper missing? It might be buried deeper.
+                </p>
+                <button id="btn-deep-search" class="btn-outlined" style="width:100%; justify-content:center;">
+                    🔍 Deep Search (Check top 1000)
+                </button>
+            `;
+            
+            dom.searchResultsList.appendChild(warningDiv);
+            
+            // 绑定点击事件
+            document.getElementById('btn-deep-search').addEventListener('click', (e) => {
+                e.stopPropagation(); // 防止冒泡触发 item 点击
+                performSearch(true); // 🚀 开启深度搜索模式
+            });
+        }
+
     } catch (e) {
         console.error(e);
         dom.searchResultsList.innerHTML = '<div class="empty-state">Error searching DBLP.</div>';
@@ -392,55 +483,216 @@ function renderSearchResults(hits) {
         
         div.innerHTML = `<div class="result-title">${info.title}</div><div class="result-meta">${authors}</div><div class="result-meta" style="color:var(--md-sys-color-primary);margin-top:4px;">${info.venue || 'Unknown'} ${info.year || ''}</div>`;
         
+        
         div.addEventListener('click', async () => {
             document.querySelectorAll('.result-item').forEach(el => el.classList.remove('active')); 
             div.classList.add('active');
             
-            // 🚀 关键：保存 DBLP 返回的 venue (例如 "WACV")
+            // 1. 修正 NIPS
+            if (info.venue === 'NIPS') {
+                info.venue = 'NeurIPS'; // 修改源数据，保证传入 backupData 也是对的
+            }
+
+            // 保存 DBLP 返回的 venue (例如 "WACV")
             LAST_CLICKED_VENUE_HINT = info.venue; 
-            
-            await fetchAndFillBibtex(info.key);
+
+            // 🚀 检查模式：是“极速版”还是“精准版”？
+            saveValuesFromUI(); // 确保拿到最新设置
+            const mode = ConfigManager.getSearchMode();
+
+            if (mode === 'simple') {
+                // ==========================
+                // ⚡ 极速模式 (Fast Mode)
+                // ==========================
+                console.log("⚡ 使用极速模式 (From Metadata)");
+                
+                // 直接生成 BibTeX
+                const generatedBib = generateBibFromJSON(info);
+                dom.input.value = generatedBib;
+                
+                // 自动学习规则
+                if (info.venue) {
+                    ConfigManager.addCustomRule(info.venue, info.venue);
+                }
+
+                // 立即转换
+                dom.btnConvert.click();
+                showToast("Imported (Fast Mode)!");
+
+            } else {
+                // ==========================
+                // 🐢 精准模式 (Detailed Mode)
+                // ==========================
+                // 走老路：API -> Proxy -> HTML 爬虫
+                await fetchAndFillBibtex(info.key, info); 
+            }
         });
         dom.searchResultsList.appendChild(div);
     });
 }
+            
 
 // 修改：fetchAndFillBibtex (防止 input 修改时 hint 失效)
-async function fetchAndFillBibtex(key) {
+async function fetchAndFillBibtex(key, backupData = null) {
+    // 1. 优先尝试 Dagstuhl 镜像站的 .bib 接口 (最快，最标准)
+    const primaryUrl = `https://dblp.dagstuhl.de/rec/${key}.bib`;
+    // 2. 备用：你发现的那个坚不可摧的 .html 网页
+    const fallbackHtmlUrl = `https://dblp.org/rec/${key}.html?view=bibtex`;
+    
+    console.log("🔗 开始请求:", key);
+
     try {
         showToast("Fetching BibTeX...");
-        const res = await fetch(`https://dblp.org/rec/${key}.bib`);
-        if(!res.ok) throw new Error("Err");
+        let rawText = "";
 
-        const bibText = await res.text();
-                dom.input.value = bibText;
+        // =========================================================
+        // 阶段 1: 尝试标准 .bib 接口 (带代理回退)
+        // =========================================================
+        try {
+            // 尝试直连镜像站
+            const res = await fetch(primaryUrl);
+            if (res.status === 429 || res.status === 503) throw new Error("RateLimit");
+            if (!res.ok) throw new Error("FetchFail");
+            const text = await res.text();
+            
+            // 检查是否是被封锁的 HTML 页面
+            if (text.trim().startsWith("<!DOCTYPE") || text.includes("<html")) {
+                throw new Error("GotHtmlError");
+            }
+            rawText = text;
+
+        } catch (err) {
+            console.warn(`标准接口受限 (${err.message})，尝试代理...`);
+            
+            // 尝试通过代理访问标准接口
+            try {
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(primaryUrl)}`;
+                const res = await fetch(proxyUrl);
+                if (!res.ok) throw new Error("ProxyFail");
+                rawText = await res.text();
+            } catch (proxyErr) {
+                console.warn("代理也失败了，准备尝试爬取 HTML 页面...");
+                // 代理也挂了？别急，我们还有最后一招...
+            }
+        }
+
+        // =========================================================
+        // 阶段 2: 终极兜底 - 爬取 .html?view=bibtex (你的发现)
+        // =========================================================
+        if (!rawText || rawText.includes("<!DOCTYPE") || rawText.includes("Error 503")) {
+            // 如果上面的 .bib 接口全军覆没，或者返回了错误页面
+            // 我们直接请求那个“网页版”链接，因为网页版很难被封
+            console.log("🛡️ 启用终极兜底：爬取 HTML 视图");
+            
+            // 注意：这里也得走代理，因为直接 fetch 跨域的 HTML 会被浏览器拦截 CORS
+            const htmlProxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fallbackHtmlUrl)}`;
+            const res = await fetch(htmlProxyUrl);
+            if (!res.ok) throw new Error("HtmlFetchFail");
+            rawText = await res.text();
+        }
+
+        // =========================================================
+        // 处理数据
+        // =========================================================
+        // 这里的 rawText 可能是纯 BibTeX，也可能是一大坨 HTML 代码
+        // 但没关系，我们的 parseRawBibtex 正则非常强大，它能忽略 HTML 标签，
+        // 直接在乱码中定位到 @article{...} 并提取出来！
         
-                // ===========================================================
-                // 🧠 自动学习逻辑 (Auto-Learn)
-                // ===========================================================
-                if (LAST_CLICKED_VENUE_HINT) {
-                    // 1. 解析刚刚抓取到的 BibTeX，获取其“官方全称”
-                    const entries = parseRawBibtex(bibText);
-                    if (entries.length > 0) {
-                        const entry = entries[0];
-                        const fullVenue = entry.fields['booktitle'] || entry.fields['journal'];
-                        
-                        if (fullVenue) {
-                            // 2. 将 "全称" -> "缩写(来自DBLP点击)" 存入本地
-                            // 注意：这里我们存的是原始全称 (如 {IEEE} Conf...)，保证下次能全字匹配
-                            ConfigManager.addCustomRule(fullVenue, LAST_CLICKED_VENUE_HINT);
-                        }
-                    }
-                }
+        const entries = parseRawBibtex(rawText);
+
+        if (entries.length === 0) {
+            throw new Error("No BibTeX found in response");
+        }
+
+        // 🛠️ 修复点：不要调用 toBibTeX，而是手动拼接字符串
+        // 因为 toBibTeX 需要 keepFields 属性，而这里的 entries 没有。
+        // 我们只需要生成一个合法的 BibTeX 扔进 Input 框，格式丑点没关系，
+        // 后面的 dom.btnConvert.click() 会负责把它变漂亮。
         
+        const cleanBibtex = entries.map(e => {
+            let str = `@${e.type}{${e.key},\n`;
+            // 遍历所有字段直接输出
+            for (const [k, v] of Object.entries(e.fields)) {
+                str += `  ${k} = {${v}},\n`;
+            }
+            str += `}`;
+            return str;
+        }).join('\n\n');
         
-        // 自动触发转换
+        dom.input.value = cleanBibtex;
+
+        // 自动学习
+        if (LAST_CLICKED_VENUE_HINT) {
+            const entry = entries[0];
+            const fullVenue = entry.fields['booktitle'] || entry.fields['journal'];
+            if (fullVenue) {
+                ConfigManager.addCustomRule(fullVenue, LAST_CLICKED_VENUE_HINT);
+            }
+        }
+        
         setTimeout(() => dom.btnConvert.click(), 100);
-        showToast("Imported & Rule Learned!"); // 提示用户已学习
+        showToast("Imported!");
+
     } catch(e) { 
-        console.error(e);
-        showToast("Failed to fetch"); 
+        console.error("网络请求全军覆没，尝试使用 Search JSON 兜底", e);
+
+        // =========================================================
+        // 🛡️ 阶段 3: 本地 JSON 兜底 (零网络请求)
+        // =========================================================
+        if (backupData) {
+            console.log("正在从 Search JSON 生成 BibTeX...");
+            const generatedBib = generateBibFromJSON(backupData);
+            dom.input.value = generatedBib;
+            
+            // 自动学习 (记录缩写)
+            if (backupData.venue) {
+                // 注意：这里学到的是缩写对缩写 (ISCAS => ISCAS)，
+                // 虽然不是全称，但至少保证了 ID 生成是正确的。
+                ConfigManager.addCustomRule(backupData.venue, backupData.venue);
+            }
+
+            setTimeout(() => dom.btnConvert.click(), 100);
+            showToast("Generated from metadata (Offline mode)");
+            return; // 成功退出
+        }
+
+        showToast("Failed to fetch (All methods tried)"); 
     }
+}
+
+// 🛠️ 辅助函数：把 DBLP Search JSON 转换成 BibTeX 字符串
+function generateBibFromJSON(info) {
+    // 1. 确定类型
+    let type = 'misc';
+    const typeStr = (info.type || "").toLowerCase();
+    if (typeStr.includes('conference') || typeStr.includes('workshop') || typeStr.includes('proceedings')) {
+        type = 'inproceedings';
+    } else if (typeStr.includes('journal') || typeStr.includes('article')) {
+        type = 'article';
+    } else if (typeStr.includes('book')) {
+        type = 'book';
+    }
+
+    // 2. 处理作者 (Search API 返回的是数组或单个对象，需要转成 "A and B")
+    let authorStr = "Unknown";
+    if (info.authors && info.authors.author) {
+        const authors = Array.isArray(info.authors.author) 
+            ? info.authors.author.map(a => a.text) 
+            : [info.authors.author.text || info.authors.author];
+        authorStr = authors.join(' and ');
+    }
+
+    // 3. 构建 BibTeX
+    // 注意：Search API 的 venue 通常是缩写 (如 ISCAS)，我们暂且填入 booktitle
+    return `@${type}{${info.key},
+  author    = {${authorStr}},
+  title     = {${info.title}},
+  ${type === 'article' ? 'journal' : 'booktitle'} = {${info.venue || "CONF"}},
+  year      = {${info.year}},
+  pages     = {${info.pages || ""}},
+  doi       = {${info.doi || ""}},
+  url       = {${info.url || ""}}
+}`;
 }
 
 // 🚀 导出功能
