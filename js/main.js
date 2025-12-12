@@ -493,6 +493,18 @@ function renderSearchResults(hits) {
                 info.venue = 'NeurIPS'; // 修改源数据，保证传入 backupData 也是对的
             }
 
+            // 2. 修正 Findings (新增逻辑)
+            // 检查 ee (链接) 或 url 是否包含 'findings'
+            const eeStr = Array.isArray(info.ee) ? info.ee.join(' ') : (info.ee || "");
+            const checkSource = (eeStr + (info.url || "")).toLowerCase();
+            
+            if (checkSource.includes('findings')) {
+                // 如果检测到是 Findings，但 venue 还没写，就加上后缀
+                if (info.venue && !info.venue.toLowerCase().includes('findings')) {
+                    info.venue = `${info.venue} (Findings)`;
+                }
+            }
+
             // 保存 DBLP 返回的 venue (例如 "WACV")
             LAST_CLICKED_VENUE_HINT = info.venue; 
 
@@ -682,12 +694,33 @@ function generateBibFromJSON(info) {
         authorStr = authors.join(' and ');
     }
 
+    // 3. 处理会议名称 (Venue)
+    let venueName = info.venue || "CONF";
+
+    // Fix A: NIPS -> NeurIPS (之前的逻辑)
+    if (venueName === 'NIPS') venueName = 'NeurIPS';
+
+    // =========================================================
+    // 🚀 Fix B: 智能识别 Findings (根据 ee 或 url 判断)
+    // =========================================================
+    // DBLP 的 ee 字段有时是字符串，有时是数组，需要安全处理
+    const eeStr = Array.isArray(info.ee) ? info.ee.join(' ') : (info.ee || "");
+    // 将 ee 和 url 拼起来检查，只要包含 "findings" 就算
+    const checkSource = (eeStr + (info.url || "")).toLowerCase();
+
+    if (checkSource.includes('findings')) {
+        // 防止重复添加 (比如 venue 本身已经是 "ACL Findings" 了)
+        if (!venueName.toLowerCase().includes('findings')) {
+            venueName = `${venueName} (Findings)`;
+        }
+    }
+
     // 3. 构建 BibTeX
     // 注意：Search API 的 venue 通常是缩写 (如 ISCAS)，我们暂且填入 booktitle
     return `@${type}{${info.key},
   author    = {${authorStr}},
   title     = {${info.title}},
-  ${type === 'article' ? 'journal' : 'booktitle'} = {${info.venue || "CONF"}},
+  ${type === 'article' ? 'journal' : 'booktitle'} = {${venueName}},
   year      = {${info.year}},
   pages     = {${info.pages || ""}},
   doi       = {${info.doi || ""}},

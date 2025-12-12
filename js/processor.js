@@ -97,6 +97,22 @@ export function processEntries(inputText, mappingRules, idFormat, keepFields, ve
         if (!foundRule && venueFull) {
             for (let rule of mappingRules) {
                 if (rule.regex.test(venueFull)) {
+
+                    // =================================================
+                    // 🛡️ [新增] 核心修复: 防止 Findings 被主会规则误伤
+                    // =================================================
+                    const inputHasFindings = venueFull.toLowerCase().includes('findings');
+                    const ruleHasFindings = rule.abbr.toLowerCase().includes('findings');
+                    
+                    // 逻辑：如果输入里有 "Findings" (比如 ACL Findings)，
+                    // 但匹配到的规则里没有 (比如只是 ACL)，说明这个规则太宽泛了。
+                    // 我们跳过它 (continue)，不让它覆盖更精确的信息。
+                    // 这样程序就会继续往下走，最终使用我们传入的精准 Hint。
+                    if (inputHasFindings && !ruleHasFindings) {
+                        continue; 
+                    }
+                    // =================================================
+                    
                     venueAbbrForId = rule.abbr;
                     targetVenueName = (venueMode === 'full') ? rule.full : rule.abbr;
                     foundRule = true;

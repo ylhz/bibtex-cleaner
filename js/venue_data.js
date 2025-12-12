@@ -34,6 +34,7 @@ COLT|Computational Learning Theory => COLT || Annual Conference on Computational
 // 3. 自然语言处理 (NLP)
 const RULES_NLP = `
 # === 3. NLP & Computational Linguistics ===
+Findings of the Association for Computational Linguistics|Findings of ACL => ACL (Findings) || Findings of the Association for Computational Linguistics
 ACL|Association for Computational Linguistics => ACL || Annual Meeting of the Association for Computational Linguistics
 EMNLP|Empirical Methods in Natural Language Processing => EMNLP || Conference on Empirical Methods in Natural Language Processing
 NAACL|North American Chapter of the Association for Computational Linguistics => NAACL || North American Chapter of the Association for Computational Linguistics
