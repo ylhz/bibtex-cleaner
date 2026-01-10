@@ -7,7 +7,9 @@ export const CONSTANTS = {
     DEFAULT_FORMAT: "[Auth][Year][Title]_[Venue]",
     DEFAULT_MAPPINGS: VENUE_MAPPING_DATA,
     DEFAULT_KEEP_ORIGINAL: true, // 7. 默认配置改为 true
-    DEFAULT_SEARCH_MODE: 'simple' // 🚀 新增默认值：简版
+    DEFAULT_SEARCH_MODE: 'simple', // 🚀 新增默认值：简版
+    DEFAULT_FULL_AUTHOR_NAME: false, // 默认使用缩写作者名
+    DEFAULT_SHOW_ALL_AUTHORS: false // 默认只显示前3个作者
 };
 
 
@@ -61,6 +63,20 @@ export const ConfigManager = {
     // 🚀 新增：搜索模式 (simple | detailed)
     getSearchMode() { return this.get('bib-search-mode', CONSTANTS.DEFAULT_SEARCH_MODE); },
     setSearchMode(v) { this.set('bib-search-mode', v); },
+
+    // 作者名输出模式 (完整名 | 缩写)
+    getFullAuthorName() {
+        const val = localStorage.getItem('bib-full-author-name');
+        return val === null ? CONSTANTS.DEFAULT_FULL_AUTHOR_NAME : val === 'true';
+    },
+    setFullAuthorName(v) { localStorage.setItem('bib-full-author-name', v); },
+
+    // 是否显示所有作者 (GB/T格式)
+    getShowAllAuthors() {
+        const val = localStorage.getItem('bib-show-all-authors');
+        return val === null ? CONSTANTS.DEFAULT_SHOW_ALL_AUTHORS : val === 'true';
+    },
+    setShowAllAuthors(v) { localStorage.setItem('bib-show-all-authors', v); },
 
     reset() { localStorage.clear(); }
 };

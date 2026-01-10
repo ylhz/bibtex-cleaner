@@ -8,7 +8,11 @@ import { toGBT } from './formatters/gbt7714.js';
 const FORMATTERS = {
     'bibtex': (entries) => entries.map(toBibTeX).join('\n\n'),
     'mla': (entries) => entries.map(toMLA).join('\n\n'),
-    'gbt': (entries) => entries.map((e, i) => toGBT(e, i)).join('\n')
+    'gbt': (entries) => {
+        const fullNameMode = ConfigManager.getFullAuthorName();
+        const showAllAuthors = ConfigManager.getShowAllAuthors();
+        return entries.map((e, i) => toGBT(e, i, fullNameMode, showAllAuthors)).join('\n');
+    }
 };
 
 let CURRENT_DATA = [];
@@ -31,6 +35,8 @@ const dom = {
     btnToggleFields: document.getElementById('btn-toggle-fields'),
     idFormat: document.getElementById('id-format'),
     chkKeepOriginal: document.getElementById('chk-keep-original'),
+    chkFullAuthorName: document.getElementById('chk-full-author-name'),
+    chkShowAllAuthors: document.getElementById('chk-show-all-authors'),
     mappingRules: document.getElementById('mapping-rules'),
     // 🚀 新增导出按钮
     btnExportRules: document.getElementById('btn-export-rules'),
@@ -87,6 +93,12 @@ function loadValuesToUI() {
         dom.chkKeepOriginal.checked = ConfigManager.getKeepOriginal();
         updateIdFormatState();
     }
+    if(dom.chkFullAuthorName) {
+        dom.chkFullAuthorName.checked = ConfigManager.getFullAuthorName();
+    }
+    if(dom.chkShowAllAuthors) {
+        dom.chkShowAllAuthors.checked = ConfigManager.getShowAllAuthors();
+    }
     // 3. 强制重置 Show More 的 UI 状态
     if (dom.btnToggleFields) {
         const icon = dom.btnToggleFields.querySelector('svg');
@@ -111,6 +123,8 @@ function saveValuesFromUI() {
     ConfigManager.setMappings(dom.mappingRules.value);
     ConfigManager.setVenueMode([...dom.venueRadios].find(r => r.checked)?.value || 'abbr');
     if(dom.chkKeepOriginal) ConfigManager.setKeepOriginal(dom.chkKeepOriginal.checked);
+    if(dom.chkFullAuthorName) ConfigManager.setFullAuthorName(dom.chkFullAuthorName.checked);
+    if(dom.chkShowAllAuthors) ConfigManager.setShowAllAuthors(dom.chkShowAllAuthors.checked);
     // 🚀 保存搜索模式
     ConfigManager.setSearchMode([...dom.searchRadios].find(r => r.checked)?.value || 'simple');
 }
@@ -248,7 +262,9 @@ function setupAutoConvertListeners() {
     const allChecks = [
         ...dom.fieldsContainerPrimary.querySelectorAll('input'),
         ...dom.fieldsContainerSecondary.querySelectorAll('input'),
-        dom.chkKeepOriginal
+        dom.chkKeepOriginal,
+        dom.chkFullAuthorName,
+        dom.chkShowAllAuthors
     ];
     allChecks.forEach(chk => chk.addEventListener('change', () => dom.btnConvert.click()));
 
