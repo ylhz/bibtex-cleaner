@@ -7,9 +7,10 @@ import { toGBT } from './formatters/gbt7714.js';
 import { initBatchMode, checkShouldSwitchToBatchMode, showModeSwitchDialog, processBatchEntries, reprocessAllEntries, BatchModeState, switchToBatchMode } from './batch-mode.js';
 import { detectWarnings } from './warning-system.js';
 import { detectAIGenerated } from './ai-detector.js';
-import { initSyncScroll } from './sync-scroll.js';
-import { initTestMode } from './test-mode.js';
 import { initVerificationMode } from './verification-mode.js';
+
+// 测试模式，push时需要注释
+// import { initSyncScroll } from './sync-scroll.js';
 
 const FORMATTERS = {
     'bibtex': (entries) => entries.map(toBibTeX).join('\n\n'),

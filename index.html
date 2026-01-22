@@ -22,9 +22,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BibTeX Pro Formatter</title>
     
-    <!-- <base href="/bibtex-cleaner/"> -->
-    
+    <!-- 自动检测部署环境并设置 base 路径 -->
     <script>
+        // GitHub Pages 或 Vercel 部署时自动设置 base href
         if (window.location.hostname.endsWith('github.io') || window.location.hostname.endsWith('vercel.app')) {
             const repoName = window.location.pathname.split('/')[1];
             if (repoName) {
@@ -33,6 +33,7 @@
                 document.head.prepend(baseTag);
             }
         }
+        // 本地开发时无需设置 base，使用相对路径即可
     </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">

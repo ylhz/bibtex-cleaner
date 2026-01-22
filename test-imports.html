@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Import Test</title>
+</head>
+<body>
+    <h1>Testing Module Imports</h1>
+    <div id="status">Loading...</div>
+    
+    <script type="module">
+        try {
+            console.log('开始加载模块...');
+            
+            // 测试导入 verification-mode
+            import('./js/verification-mode.js')
+                .then(() => {
+                    console.log('✓ verification-mode.js 加载成功');
+                    document.getElementById('status').innerHTML += '<br>✓ verification-mode.js 加载成功';
+                })
+                .catch(err => {
+                    console.error('✗ verification-mode.js 加载失败:', err);
+                    document.getElementById('status').innerHTML += '<br>✗ verification-mode.js 加载失败: ' + err.message;
+                });
+            
+            // 测试导入 main
+            import('./js/main.js')
+                .then(() => {
+                    console.log('✓ main.js 加载成功');
+                    document.getElementById('status').innerHTML += '<br>✓ main.js 加载成功';
+                })
+                .catch(err => {
+                    console.error('✗ main.js 加载失败:', err);
+                    document.getElementById('status').innerHTML += '<br>✗ main.js 加载失败: ' + err.message;
+                });
+                
+        } catch (err) {
+            console.error('模块加载错误:', err);
+            document.getElementById('status').innerHTML = '模块加载错误: ' + err.message;
+        }
+    </script>
+</body>
+</html>
