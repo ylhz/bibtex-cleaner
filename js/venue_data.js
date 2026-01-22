@@ -58,6 +58,7 @@ TRO|Transactions on Robotics => TRO || IEEE Transactions on Robotics
 IJRR|International Journal of Robotics Research => IJRR || The International Journal of Robotics Research
 RAL|Robotics and Automation Letters => RAL || IEEE Robotics and Automation Letters
 SciRob|Science Robotics => SciRob || Science Robotics
+RAS|Robotics and Autonomous Systems => RAS || Robotics and Autonomous Systems (RAS)
 `;
 
 // 5. 计算机网络 (Networking) - 新增大类 (CCF)

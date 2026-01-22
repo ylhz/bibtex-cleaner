@@ -46,13 +46,16 @@ export function processEntries(inputText, mappingRules, idFormat, keepFields, ve
     const rawEntries = parseRawBibtex(inputText); // 这里的 parseRawBibtex 保持原样即可，不用改
 
     const warnings = []; // 改名：从 unknowns 改为 warnings，涵盖范围更广
+    const entryWarnings = [];
     
-    const processedEntries = rawEntries.map(entry => {
+    const processedEntries = rawEntries.map((entry, entryIndex) => {
         const newEntry = { 
             type: entry.rawType, 
             fields: { ...entry.fields },
             keepFields: keepFields
         };
+
+        entryWarnings[entryIndex] = [];
 
         // =========================================================
         // 🧼 核心修复：清洗 DBLP 作者名中的消歧义数字
@@ -137,18 +140,20 @@ export function processEntries(inputText, mappingRules, idFormat, keepFields, ve
 
             // 🚨 只要没命中规则，就报警。
             // 提示用户："这个会议不在库里，我现在直接用的原文/DBLP提示，你自己检查对不对"
-            if (venueAbbrForId === venueFull) {
-                warnings.push(`"${venueFull.substring(0, 30)}..." (Not in Library, keeping original)`);
-            } else {
-                warnings.push(`"${venueAbbrForId}" (From DBLP, not in Library)`);
-            }
+            const warnMsg = (venueAbbrForId === venueFull)
+                ? `"${venueFull.substring(0, 30)}..." (Not in Library, keeping original)`
+                : `"${venueAbbrForId}" (From DBLP, not in Library)`;
+            warnings.push(warnMsg);
+            entryWarnings[entryIndex].push(warnMsg);
         } 
         
         // --- 3. 安全校验 (即使命中规则，也检查是否跟 DBLP 冲突) ---
         else if (hintVenue && rawEntries.length === 1) {
             // 如果生成的会议名跟 DBLP 的提示完全不同，报警
             if (targetVenueName !== hintVenue && venueAbbrForId !== hintVenue) {
-                warnings.push(`Mismatch: Output "${targetVenueName}" vs DBLP "${hintVenue}"`);
+                const warnMsg = `Mismatch: Output "${targetVenueName}" vs DBLP "${hintVenue}"`;
+                warnings.push(warnMsg);
+                entryWarnings[entryIndex].push(warnMsg);
             }
         }
 
@@ -194,7 +199,7 @@ export function processEntries(inputText, mappingRules, idFormat, keepFields, ve
         return newEntry;
     }); // <--- ❌ 删除了输出排序 .sort((a, b) => a.id.localeCompare(b.id))
 
-    return { data: processedEntries, warnings: warnings };
+    return { data: processedEntries, warnings: warnings, entryWarnings };
 }
 
 // 🚀 导出 parseRawBibtex 供 main.js 使用

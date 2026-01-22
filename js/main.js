@@ -1,9 +1,15 @@
 import { CONSTANTS, ConfigManager } from './config.js';
 import { processEntries, parseMappingRules, parseRawBibtex } from './processor.js';
-import { showToast, getTitleWord } from './utils.js'; 
+import { showToast, getTitleWord } from './utils.js';
 import { toBibTeX } from './formatters/bibtex.js';
 import { toMLA } from './formatters/mla.js';
 import { toGBT } from './formatters/gbt7714.js';
+import { initBatchMode, checkShouldSwitchToBatchMode, showModeSwitchDialog, processBatchEntries, reprocessAllEntries, BatchModeState, switchToBatchMode } from './batch-mode.js';
+import { detectWarnings } from './warning-system.js';
+import { detectAIGenerated } from './ai-detector.js';
+import { initSyncScroll } from './sync-scroll.js';
+import { initTestMode } from './test-mode.js';
+import { initVerificationMode } from './verification-mode.js';
 
 const FORMATTERS = {
     'bibtex': (entries) => entries.map(toBibTeX).join('\n\n'),
@@ -28,6 +34,7 @@ const dom = {
     output: document.getElementById('output'),
     btnConvert: document.getElementById('btn-convert'),
     btnCopy: document.getElementById('btn-copy'),
+    btnInlineSwitchBatch: document.getElementById('btn-inline-switch-batch'),
     tabs: document.querySelectorAll('.tab-btn'),
     // Settings Drawer
     fieldsContainerPrimary: document.getElementById('fields-primary'),
@@ -67,6 +74,23 @@ function init() {
     loadValuesToUI();
     setupEventListeners();
     setupAutoConvertListeners(); // 监听设置变化
+
+    // 初始化批量模式
+    initBatchMode();
+
+    // 初始化验证模式
+    initVerificationMode();
+
+    // 初始化同步滚动
+    const entriesPane = document.getElementById('batch-entries-pane');
+    const previewPane = document.getElementById('batch-preview-pane');
+    if (entriesPane && previewPane) {
+        initSyncScroll(entriesPane, previewPane);
+    }
+
+    // 初始化开发者测试模式
+
+    updateBatchInlineToggle();
 }
 
 function renderFields() {
@@ -266,10 +290,22 @@ function setupAutoConvertListeners() {
         dom.chkFullAuthorName,
         dom.chkShowAllAuthors
     ];
-    allChecks.forEach(chk => chk.addEventListener('change', () => dom.btnConvert.click()));
+
+    // 触发转换的函数 - 根据当前模式决定调用哪个转换函数
+    const triggerConversion = () => {
+        if (BatchModeState.isActive) {
+            // 批量模式：重新处理所有条目
+            reprocessAllEntries();
+        } else {
+            // 单条模式：点击转换按钮
+            dom.btnConvert.click();
+        }
+    };
+
+    allChecks.forEach(chk => chk.addEventListener('change', triggerConversion));
 
     // 监听 Radio
-    dom.venueRadios.forEach(r => r.addEventListener('change', () => dom.btnConvert.click()));
+    dom.venueRadios.forEach(r => r.addEventListener('change', triggerConversion));
 
     // 监听输入框 (防抖)
     let timeout;
@@ -277,8 +313,20 @@ function setupAutoConvertListeners() {
     inputs.forEach(input => {
         input.addEventListener('input', () => {
             clearTimeout(timeout);
-            timeout = setTimeout(() => dom.btnConvert.click(), 500);
+            timeout = setTimeout(triggerConversion, 500);
         });
+    });
+
+    // 输入变化时更新批量模式提示按钮
+    let batchHintTimer;
+    dom.input?.addEventListener('input', () => {
+        clearTimeout(batchHintTimer);
+        batchHintTimer = setTimeout(updateBatchInlineToggle, 250);
+    });
+
+    dom.btnInlineSwitchBatch?.addEventListener('click', () => {
+        // 直接切换到批量模式，switchToBatchMode 会复制当前输入
+        switchToBatchMode();
     });
 }
 
@@ -289,28 +337,58 @@ function runConversion() {
     const rawInput = dom.input.value;
     if (!rawInput.trim()) return;
 
+    updateBatchInlineToggle();
+
+    // 先解析条目，检查是否应该切换到批量模式
+    const parsedEntries = parseRawBibtex(rawInput);
+
+    // 检查是否应该切换到批量模式（≥3个条目）
+    if (checkShouldSwitchToBatchMode(parsedEntries)) {
+        showModeSwitchDialog(parsedEntries.length);
+        return; // 等待用户选择
+    }
+
     // 解析规则
     const rules = parseMappingRules(dom.mappingRules.value);
-    
+
     // 执行处理 (传入新的回调函数用于检测未知会议)
     // 调用 processor，传入 LAST_CLICKED_VENUE_HINT
     const resultObj = processEntries(
-        rawInput, 
-        rules, 
-        dom.idFormat.value, 
-        ConfigManager.getFields(), 
-        ConfigManager.getVenueMode(), 
+        rawInput,
+        rules,
+        dom.idFormat.value,
+        ConfigManager.getFields(),
+        ConfigManager.getVenueMode(),
         ConfigManager.getKeepOriginal(),
         LAST_CLICKED_VENUE_HINT, // 传入 DBLP 提示
         ConfigManager.getCustomRules() // 传入本地学习到的规则
     );
-    
+
     CURRENT_DATA = resultObj.data;
     CURRENT_WARNINGS = resultObj.warnings; // 保存警告
-    
+
     // 渲染结果
     renderOutput();
     handleWarnings(CURRENT_WARNINGS);
+}
+
+function updateBatchInlineToggle() {
+        if (!dom.btnInlineSwitchBatch) return;
+        const rawInput = dom.input?.value || '';
+        if (!rawInput.trim()) {
+            dom.btnInlineSwitchBatch.classList.add('hidden');
+            return;
+        }
+        try {
+            const parsed = parseRawBibtex(rawInput) || [];
+            if (parsed.length >= 3) {
+                dom.btnInlineSwitchBatch.classList.remove('hidden');
+            } else {
+                dom.btnInlineSwitchBatch.classList.add('hidden');
+            }
+        } catch (e) {
+            dom.btnInlineSwitchBatch.classList.add('hidden');
+        }
 }
 
 

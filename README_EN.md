@@ -47,6 +47,8 @@
       - **MLA** (For humanities)
       - **GB/T 7714** (For Chinese thesis standards)
   - **🔒 Privacy First**: **100% Client-side**. No data is sent to any server. Everything runs in your browser.
+  - **📦 Batch Mode + Verification**: Paste many entries, filter warnings, ignore/confirm, AI-suspect marking, and trigger DBLP bulk verification with one click.
+  - **💾 Local Auto-Learning**: Clicking a DBLP result or importing BibTeX writes the full-name→abbr mapping to local storage for future reuse.
 
 ## 🛠️ How It Works (The "No Guessing" Logic)
 
@@ -65,6 +67,7 @@ To ensure 100% accuracy for academic citations, we use a strict 3-tier resolutio
 2.  **Batch Conversion**:
       * Paste multiple BibTeX entries into the input box.
       * Click **Convert**.
+  * If there are ≥3 entries, you’ll be prompted to switch to Batch Mode, where you can review warnings, ignore/confirm, or run verification.
 3.  **Check Warnings**:
       * If you see a red **⚠️ Warning** label, click it to see which venues are unknown or mismatched.
 4.  **Copy**: Copy the result to your LaTeX/Word document.

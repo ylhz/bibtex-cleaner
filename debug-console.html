@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Console Logger</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        #log { 
+            background: #1e1e1e; 
+            color: #d4d4d4; 
+            padding: 20px; 
+            border-radius: 8px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .error { color: #f48771; }
+        .warn { color: #dcdcaa; }
+        .info { color: #4fc1ff; }
+        .log { color: #d4d4d4; }
+    </style>
+</head>
+<body>
+    <h1>Console Output</h1>
+    <button onclick="testVerification()">Test Verification Mode</button>
+    <button onclick="clearLog()">Clear</button>
+    <div id="log"></div>
+    
+    <script>
+        const logDiv = document.getElementById('log');
+        
+        // 拦截所有 console 方法
+        ['log', 'error', 'warn', 'info'].forEach(method => {
+            const original = console[method];
+            console[method] = function(...args) {
+                original.apply(console, args);
+                const message = args.map(arg => 
+                    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                ).join(' ');
+                const div = document.createElement('div');
+                div.className = method;
+                div.textContent = `[${method.toUpperCase()}] ${new Date().toLocaleTimeString()} - ${message}`;
+                logDiv.appendChild(div);
+                logDiv.scrollTop = logDiv.scrollHeight;
+            };
+        });
+        
+        // 拦截错误
+        window.addEventListener('error', (e) => {
+            console.error(`Uncaught Error: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`);
+        });
+        
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error(`Unhandled Promise Rejection: ${e.reason}`);
+        });
+        
+        function clearLog() {
+            logDiv.innerHTML = '';
+        }
+        
+        // 加载主页面的脚本
+        async function testVerification() {
+            console.log('开始测试验证模式...');
+            try {
+                // 动态加载 verification-mode.js
+                const module = await import('./js/verification-mode.js');
+                console.log('verification-mode.js 加载成功', module);
+                
+                // 尝试初始化
+                if (module.initVerificationMode) {
+                    module.initVerificationMode();
+                    console.log('初始化成功');
+                }
+                
+                // 测试进入验证模式
+                if (module.enterVerificationMode) {
+                    const testEntries = [
+                        { id: 'test1', originalBibtex: '@article{test1, title={Test}}' }
+                    ];
+                    module.enterVerificationMode(testEntries);
+                    console.log('进入验证模式成功');
+                }
+            } catch (err) {
+                console.error('测试失败:', err.message, err.stack);
+            }
+        }
+        
+        console.log('Console logger ready');
+    </script>
+</body>
+</html>
